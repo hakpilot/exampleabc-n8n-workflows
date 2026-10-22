@@ -1,0 +1,293 @@
+{
+  "name": "ExampleABC QA 3 - Two-Message Pace-and-Writeback Test",
+  "nodes": [
+    {
+      "id": "start",
+      "name": "Manual QA",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        320
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "prepare",
+      "name": "Prepare TWO self-only messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        350,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [1,2].map(n=>({json:{qa_index:n,to:'hyder@exampleabc.com',subject:'ExampleABC QA loop test '+n+' of 2 - Oct 22 2026',body:'Controlled internal ExampleABC automation QA #'+n+'. No prospects contacted.'}}));"
+      }
+    },
+    {
+      "id": "loop",
+      "name": "Loop QA one at a time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        600,
+        320
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "preflight",
+      "name": "Reject non-self QA send",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        840,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const x=$input.item.json;const run=$('Loop QA one at a time').context.currentRunIndex;if(x.to!=='hyder@exampleabc.com'||run>1)throw Error('Unsafe QA recipient or extra loop run');return $input.item;"
+      }
+    },
+    {
+      "id": "send",
+      "name": "Send QA to self ONLY",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1090,
+        420
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Hyder Khan"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "verify",
+      "name": "Verify send and link QA loop index",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1350,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const idx=$('Loop QA one at a time').context.currentRunIndex;const src=$('Prepare TWO self-only messages').all()[idx]?.json;const m=$input.item.json;if(!src||src.to!=='hyder@exampleabc.com'||!m.id)throw Error('Cannot verify self send or loop input');return {json:{TestID:'EXAMPLEABC-QA-20261022',Status:'LOOP_QA_OK_'+src.qa_index,Timestamp:new Date().toISOString(),'Message ID':m.id,qa_index:src.qa_index}};"
+      }
+    },
+    {
+      "id": "update",
+      "name": "Update Automation QA from loop",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1590,
+        420
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TestID": "={{ $json.TestID }}",
+            "Status": "={{ $json.Status }}",
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Message ID": "={{ $json['Message ID'] }}"
+          },
+          "matchingColumns": [
+            "TestID"
+          ],
+          "schema": [
+            {
+              "id": "TestID",
+              "displayName": "TestID",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "pace",
+      "name": "QA wait 5s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        420
+      ],
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "done",
+      "name": "QA summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        850,
+        130
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{status:'QA_LOOP_COMPLETE',iterations:$('Prepare TWO self-only messages').all().length,delivery_to:'hyder@exampleabc.com'}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Manual QA": {
+      "main": [
+        [
+          {
+            "node": "Prepare TWO self-only messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare TWO self-only messages": {
+      "main": [
+        [
+          {
+            "node": "Loop QA one at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop QA one at a time": {
+      "main": [
+        [
+          {
+            "node": "QA summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject non-self QA send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reject non-self QA send": {
+      "main": [
+        [
+          {
+            "node": "Send QA to self ONLY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send QA to self ONLY": {
+      "main": [
+        [
+          {
+            "node": "Verify send and link QA loop index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify send and link QA loop index": {
+      "main": [
+        [
+          {
+            "node": "Update Automation QA from loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Automation QA from loop": {
+      "main": [
+        [
+          {
+            "node": "QA wait 5s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA wait 5s": {
+      "main": [
+        [
+          {
+            "node": "Loop QA one at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
