@@ -1,0 +1,85 @@
+{
+  "name": "ExampleABC - Gmail Single Self-Test - MANUAL ONLY",
+  "nodes": [
+    {
+      "id": "m",
+      "name": "Manual QA Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c",
+      "name": "Self-test payload ONLY",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{to:'hyder@exampleabc.com',subject:'ExampleABC n8n Pipeline QA - 2026-10-22',body:'This is a controlled n8n delivery test sent ONLY to the ExampleABC account. No prospects were contacted.\\n\\nExampleABC automation QA.'}}];"
+      }
+    },
+    {
+      "id": "g",
+      "name": "Send QA To SELF Only",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Hyder Khan"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual QA Trigger": {
+      "main": [
+        [
+          {
+            "node": "Self-test payload ONLY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Self-test payload ONLY": {
+      "main": [
+        [
+          {
+            "node": "Send QA To SELF Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
