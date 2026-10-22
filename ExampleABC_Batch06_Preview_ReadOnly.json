@@ -1,0 +1,221 @@
+{
+  "name": "ExampleABC - Batch 06 Preview - READ ONLY",
+  "nodes": [
+    {
+      "id": "t1",
+      "name": "Manual Trigger - No Sending",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "p1",
+      "name": "Read Prospects",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        410,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Prospects",
+          "mode": "name"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p2",
+      "name": "Store Prospects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(x=>x.json)}}];"
+      }
+    },
+    {
+      "id": "d1",
+      "name": "Read Email Drafts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        890,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Email Drafts",
+          "mode": "name"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d2",
+      "name": "Store Drafts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(x=>x.json)}}];"
+      }
+    },
+    {
+      "id": "e1",
+      "name": "Read Contact Exceptions",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1370,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Contact Exceptions",
+          "mode": "name"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "v1",
+      "name": "Build Batch 06 Preview - READ ONLY",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Preview only — deliberately no Gmail node, no writing or sending\nconst P=$('Store Prospects').first().json.rows;\nconst D=$('Store Drafts').first().json.rows;\nconst X=$input.all().map(i=>i.json);\nconst key=r=>Number(r['#']||(Number(r.row_number)-1));\nconst val=x=>(x===undefined||x===null?'':String(x).trim());\nconst email=x=>val(x).toLowerCase();\nconst drafts=new Map(D.map(r=>[key(r),r]));\nconst exceptions=new Set(X.map(r=>Number(r.Prospect)).filter(Boolean));\nconst counts=new Map();\nfor(const r of P){const a=email(r['Public Email']);if(a)counts.set(a,(counts.get(a)||0)+1);}\nconst out=[];\nfor(const r of P){\n const n=key(r); if(n<56||n>75)continue;\n const d=drafts.get(n), to=email(d?.['Send To']), problems=[];\n if(val(r.Status)!=='Not contacted')problems.push('Not marked Not contacted');\n if(val(r['First Email Date']))problems.push('Existing first-send timestamp');\n if(!d)problems.push('Missing draft');\n if(d&&!/^draft\\b/i.test(val(d['Draft Status'])))problems.push('Draft already sent/held');\n if(d&&val(d['Sent Date']))problems.push('Existing draft send timestamp');\n if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(to))problems.push('Invalid recipient');\n if(to!==email(r['Public Email']))problems.push('Recipient mismatch');\n if(counts.get(to)>1)problems.push('Duplicate address in tracker');\n if(exceptions.has(n))problems.push('Existing contact exception');\n if(/unsubscribe|opt.?out|do not contact|hard bounce|no such user|mailbox full|undeliver|blocked|connection refused/i.test([r.Outcome,r.Notes,r['Next Action']].map(val).join(' ')))problems.push('Potential suppression');\n if(!val(d?.Subject)||!val(d?.['Personalized Email Body']))problems.push('Missing subject/body');\n out.push({json:{prospect_id:n,business:val(r.Business),to,subject:val(d?.Subject),body:val(d?.['Personalized Email Body']),eligibility:problems.length?'HOLD_FOR_REVIEW':'DRAFT_READY_PENDING_GMAIL_RECONCILIATION_AND_APPROVAL',issues:problems,approved:false,sent:false}});\n}\nif(out.length!==20)throw Error('Expected 20 Batch 06 prospects; found '+out.length);\nreturn out;"
+      }
+    },
+    {
+      "id": "note",
+      "name": "Safety Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        710,
+        0
+      ],
+      "parameters": {
+        "content": "## ExampleABC — Batch 06 PREVIEW ONLY\n\nReads three tabs, builds a review queue for prospects #56–75, and flags duplicates or suppression records.\n\n**Does not send emails or modify the tracker.** Assign the existing **ExampleABC Google Sheets** credential to all three Sheets nodes before testing.\n\nEvery draft still requires Gmail reconciliation and your explicit batch approval.",
+        "width": 990,
+        "height": 240
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger - No Sending": {
+      "main": [
+        [
+          {
+            "node": "Read Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Prospects": {
+      "main": [
+        [
+          {
+            "node": "Store Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Prospects": {
+      "main": [
+        [
+          {
+            "node": "Read Email Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Email Drafts": {
+      "main": [
+        [
+          {
+            "node": "Store Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Drafts": {
+      "main": [
+        [
+          {
+            "node": "Read Contact Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Contact Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Build Batch 06 Preview - READ ONLY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": []
+}
