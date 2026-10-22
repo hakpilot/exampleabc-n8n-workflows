@@ -1,0 +1,634 @@
+{
+  "name": "ExampleABC - Batch06 Initial Sender - HARD DISABLED",
+  "nodes": [
+    {
+      "id": "t1",
+      "name": "Manual Trigger - No Sending",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "p1",
+      "name": "Read Prospects",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        410,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Prospects",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "p2",
+      "name": "Store Prospects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(x=>x.json)}}];"
+      }
+    },
+    {
+      "id": "d1",
+      "name": "Read Email Drafts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        890,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Email Drafts",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "d2",
+      "name": "Store Drafts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(x=>x.json)}}];"
+      }
+    },
+    {
+      "id": "e1",
+      "name": "Read Contact Exceptions",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1370,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Contact Exceptions",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "v1",
+      "name": "Build Batch 06 Preview - READ ONLY",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Preview only — deliberately no Gmail node, no writing or sending\nconst P=$('Store Prospects').first().json.rows;\nconst D=$('Store Drafts').first().json.rows;\nconst X=$input.all().map(i=>i.json);\nconst key=r=>Number(r['#']||(Number(r.row_number)-1));\nconst val=x=>(x===undefined||x===null?'':String(x).trim());\nconst email=x=>val(x).toLowerCase();\nconst drafts=new Map(D.map(r=>[key(r),r]));\nconst exceptions=new Set(X.map(r=>Number(r.Prospect)).filter(Boolean));\nconst counts=new Map();\nfor(const r of P){const a=email(r['Public Email']);if(a)counts.set(a,(counts.get(a)||0)+1);}\nconst out=[];\nfor(const r of P){\n const n=key(r); if(n<56||n>75)continue;\n const d=drafts.get(n), to=email(d?.['Send To']), problems=[];\n if(val(r.Status)!=='Not contacted')problems.push('Not marked Not contacted');\n if(val(r['First Email Date']))problems.push('Existing first-send timestamp');\n if(!d)problems.push('Missing draft');\n if(d&&!/^draft\\b/i.test(val(d['Draft Status'])))problems.push('Draft already sent/held');\n if(d&&val(d['Sent Date']))problems.push('Existing draft send timestamp');\n if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(to))problems.push('Invalid recipient');\n if(to!==email(r['Public Email']))problems.push('Recipient mismatch');\n if(counts.get(to)>1)problems.push('Duplicate address in tracker');\n if(exceptions.has(n))problems.push('Existing contact exception');\n if(/unsubscribe|opt.?out|do not contact|hard bounce|no such user|mailbox full|undeliver|blocked|connection refused/i.test([r.Outcome,r.Notes,r['Next Action']].map(val).join(' ')))problems.push('Potential suppression');\n if(!val(d?.Subject)||!val(d?.['Personalized Email Body']))problems.push('Missing subject/body');\n out.push({json:{prospect_id:n,business:val(r.Business),to,subject:val(d?.Subject),body:val(d?.['Personalized Email Body']),eligibility:problems.length?'HOLD_FOR_REVIEW':'DRAFT_READY_PENDING_GMAIL_RECONCILIATION_AND_APPROVAL',issues:problems,approved:false,sent:false}});\n}\nif(out.length!==20)throw Error('Expected 20 Batch 06 prospects; found '+out.length);\nreturn out;"
+      }
+    },
+    {
+      "id": "note",
+      "name": "Safety Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        710,
+        0
+      ],
+      "parameters": {
+        "content": "## PRODUCTION SENDER SCAFFOLD — HARD DISABLED\n\nGmail history reconciliation reads only, explicit approval is hardcoded false, and Gmail Send is deactivated. DO NOT turn on without reviewing all recipients, creating an approval record, confirming paced loop behavior, and testing post-send tracker updates on a controlled test address.\n\nNo live sending is possible with the current configuration. Original read-only preview remains separate and unchanged.",
+        "width": 990,
+        "height": 240
+      }
+    },
+    {
+      "id": "g1",
+      "name": "Search Gmail History - Read Only",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1880,
+        300
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": true,
+        "filters": {
+          "q": "={{ '{' + $('Build Batch 06 Preview - READ ONLY').all().map(x => 'from:' + x.json.to + ' to:' + x.json.to).join(' ') + '} after:2026/10/01' }}"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "rc1",
+      "name": "Reconcile Gmail - Approval OFF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2130,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// FAIL CLOSED: read-only review. No item can be approved by this code.\nconst candidates=$('Build Batch 06 Preview - READ ONLY').all().map(x=>x.json);\nconst messages=$input.all().map(x=>x.json).filter(x=>x.id||x.threadId);\nconst normalized=x=>String(x??'').toLowerCase();\nreturn candidates.map(c=>{\n const matching=messages.filter(m=>[m.from,m.to,m.snippet].some(v=>normalized(v).includes(normalized(c.to))));\n const blockers=[...(c.issues||[])];\n if(matching.length)blockers.push('Gmail correspondence found: review manually');\n if(messages.some(m=>!m.from&&!m.to))blockers.push('Gmail search output incomplete');\n // No automatic approval. Send path is disabled separately.\n return {json:{...c,gmail_matches:matching.length,gmail_threads:matching.map(m=>m.threadId||m.id),blockers,approved:false,authorized_to_send:false,eligibility:blockers.length?'HOLD_REVIEW':'GMAIL_CHECKED_PENDING_HUMAN_APPROVAL',sent:false}};\n});"
+      }
+    },
+    {
+      "id": "if1",
+      "name": "Explicit Approval Gate - OFF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2390,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.authorized_to_send }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "w1",
+      "name": "Wait 5 seconds before any send",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2850,
+        200
+      ],
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "send1",
+      "name": "Gmail Send - DEACTIVATED",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "disabled": true,
+      "position": [
+        3090,
+        200
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Hyder Khan"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "loop1",
+      "name": "Loop 1 Prospect at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2620,
+        200
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "verify1",
+      "name": "Require Gmail Message ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3330,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const result=$input.item.json;if(!result.id&&!result.messageId)throw new Error('Gmail did not confirm message ID; do not update sent state');const source=$('Loop 1 Prospect at a Time').item.json;if(!source.authorized_to_send||!source.approved)throw new Error('Missing approval');return {json:{...source,gmail_message_id:result.id||result.messageId,gmail_thread_id:result.threadId||'',sent_at:new Date().toLocaleString('en-US',{timeZone:'America/New_York'})}};"
+      }
+    },
+    {
+      "id": "up1",
+      "name": "Update Prospect After Confirmed Send - DISABLED",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "disabled": true,
+      "position": [
+        3590,
+        200
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "operation": "update",
+        "sheetName": {
+          "__rl": true,
+          "value": "Prospects",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "#": "={{ $json.prospect_id }}",
+            "Status": "Sent",
+            "First Email Date": "={{ $json.sent_at }}"
+          },
+          "matchingColumns": [
+            "#"
+          ],
+          "schema": [
+            {
+              "id": "#",
+              "displayName": "#",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "type": "string"
+            },
+            {
+              "id": "First Email Date",
+              "displayName": "First Email Date",
+              "type": "string"
+            },
+            {
+              "id": "Draft Status",
+              "displayName": "Draft Status",
+              "type": "string"
+            },
+            {
+              "id": "Sent Date",
+              "displayName": "Sent Date",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "up2",
+      "name": "Update Draft After Confirmed Send - DISABLED",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "disabled": true,
+      "position": [
+        3850,
+        200
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "operation": "update",
+        "sheetName": {
+          "__rl": true,
+          "value": "Email Drafts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "#": "={{ $json.prospect_id }}",
+            "Draft Status": "Sent",
+            "Sent Date": "={{ $json.sent_at }}"
+          },
+          "matchingColumns": [
+            "#"
+          ],
+          "schema": [
+            {
+              "id": "#",
+              "displayName": "#",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "type": "string"
+            },
+            {
+              "id": "First Email Date",
+              "displayName": "First Email Date",
+              "type": "string"
+            },
+            {
+              "id": "Draft Status",
+              "displayName": "Draft Status",
+              "type": "string"
+            },
+            {
+              "id": "Sent Date",
+              "displayName": "Sent Date",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger - No Sending": {
+      "main": [
+        [
+          {
+            "node": "Read Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Prospects": {
+      "main": [
+        [
+          {
+            "node": "Store Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Prospects": {
+      "main": [
+        [
+          {
+            "node": "Read Email Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Email Drafts": {
+      "main": [
+        [
+          {
+            "node": "Store Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Drafts": {
+      "main": [
+        [
+          {
+            "node": "Read Contact Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Contact Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Build Batch 06 Preview - READ ONLY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Batch 06 Preview - READ ONLY": {
+      "main": [
+        [
+          {
+            "node": "Search Gmail History - Read Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Gmail History - Read Only": {
+      "main": [
+        [
+          {
+            "node": "Reconcile Gmail - Approval OFF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconcile Gmail - Approval OFF": {
+      "main": [
+        [
+          {
+            "node": "Explicit Approval Gate - OFF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explicit Approval Gate - OFF": {
+      "main": [
+        [
+          {
+            "node": "Loop 1 Prospect at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Wait 5 seconds before any send": {
+      "main": [
+        [
+          {
+            "node": "Gmail Send - DEACTIVATED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop 1 Prospect at a Time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait 5 seconds before any send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Send - DEACTIVATED": {
+      "main": [
+        [
+          {
+            "node": "Require Gmail Message ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require Gmail Message ID": {
+      "main": [
+        [
+          {
+            "node": "Update Prospect After Confirmed Send - DISABLED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Prospect After Confirmed Send - DISABLED": {
+      "main": [
+        [
+          {
+            "node": "Update Draft After Confirmed Send - DISABLED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Draft After Confirmed Send - DISABLED": {
+      "main": [
+        [
+          {
+            "node": "Loop 1 Prospect at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": []
+}
