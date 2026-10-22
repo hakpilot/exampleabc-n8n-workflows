@@ -1,0 +1,139 @@
+{
+  "name": "ExampleABC QA 2 - Isolated Sheets Update Test",
+  "nodes": [
+    {
+      "id": "qa-m",
+      "name": "Manual QA only",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        150,
+        240
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "qa-c",
+      "name": "Exact QA payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        240
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{TestID:'EXAMPLEABC-QA-20261022',Status:'VERIFIED_BY_N8N',Timestamp:new Date().toISOString(),'Message ID':'1a164515d722646e'}}];"
+      }
+    },
+    {
+      "id": "qa-s",
+      "name": "Update ONLY Automation QA",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        650,
+        240
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TestID": "={{ $json.TestID }}",
+            "Status": "={{ $json.Status }}",
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Message ID": "={{ $json['Message ID'] }}"
+          },
+          "matchingColumns": [
+            "TestID"
+          ],
+          "schema": [
+            {
+              "id": "TestID",
+              "displayName": "TestID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual QA only": {
+      "main": [
+        [
+          {
+            "node": "Exact QA payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exact QA payload": {
+      "main": [
+        [
+          {
+            "node": "Update ONLY Automation QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
