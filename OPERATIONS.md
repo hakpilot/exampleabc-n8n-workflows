@@ -1,36 +1,53 @@
-# ExampleABC Outreach Automation — Operator Guide
+# ExampleABC Sales Outreach Automation — Final Review & Launch
 
-**Status as of October 23, 2026:** This repository contains safe, locked workflow packages for n8n. They are **not production-approved** and cannot send outreach while sender nodes remain disabled. The Google Sheets approval controls both default to `HOLD`.
+**Verified October 23, 2026.** The Google Sheets/n8n/Gmail integration is deployed. Prospect sending is still **LOCKED** pending the owner's explicit review and approval.
 
-## What is prepared
+## Queued Batches
 
-- **Batch 06:** 20 initial personalized outreach emails, prospects #56–75, in the existing Google Sheets tracker. Original `Email Drafts` and `Prospects` rows remain unsent. The review workflow was directly imported into n8n on October 23. Locked deployment JSON: `ExampleABC_Batch06_FINAL_REVIEW_SENDING_LOCKED.json`.
-- **Batches 03–04:** 16 first follow-ups with verified Gmail original message/thread IDs. The review spreadsheet tabs are `Batch34 Followup Control` and `Batch34 Followup Log`. The four known exceptions (#24, #25, #29, #31) are **not included**. Locked workflow file: `ExampleABC_Batch34_Followups_THREAD_REPLIES_LOCKED.json`.
-- Separate internal QA has confirmed a single Gmail send to `hyder@exampleabc.com` and an n8n-to-Sheets update of the `Automation QA` row. The **complete batch loop/send/reconciliation pipeline is not end-to-end verified yet**.
+| Batch | Scope | Approval control | Send log |
+|---|---|---|---|
+| Initial Batch 06 | 20 initial messages, Prospects #56–75 | `Batch06 Control!B2` = `HOLD` | `Batch06 Send Log` |
+| First follow-ups from Batches 03–04 | 16 messages replying to each previously sent original thread | `Batch34 Followup Control!B2` = `HOLD` | `Batch34 Followup Log` |
 
-## One-time stable deployment setup (no secrets in source files)
+**Tracker**: https://docs.google.com/spreadsheets/d/1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY/edit
 
-1. In `https://auto.exampleabc.com`, open **Settings → n8n API → Create API Key**. Prefer the minimum available scopes: `credential:list`, `workflow:list`, `workflow:read`, `workflow:create`, `workflow:update`. If scoped keys are not supported by the n8n edition, protect the key as full-access.
-2. In GitHub open `hakpilot/exampleabc-n8n-workflows` → **Settings → Secrets and variables → Actions → New repository secret**. Set **Name** to `N8N_API_KEY` and **Secret** to the entire n8n key. Never enter it in a chat or commit it in a file.
-3. After setup, push a reviewed change to **one of the two whitelisted locked workflow JSONs**, or go to GitHub **Actions → Deploy ExampleABC LOCKED n8n Workflows → Run workflow (both)**.
-4. Read the GitHub Actions result. The deployer only creates/updates *inactive LOCKED* workflows, resolves existing n8n OAuth credential IDs by exact name, verifies all mail sends/replies and sheet writes are deactivated, and prints the resulting n8n links. It does not execute a workflow.
+Review initial message **subjects, recipients, full bodies, opt-out wording** in `Email Drafts` rows **57–76** and compare against `Batch06 Send Log`.
 
-## Final review and launch — NOT YET ENABLED
+Review follow-up bodies in `Email Drafts` column H for the 16 IDs in `Batch34 Followup Log`. Four exceptions (#24, #25, #29, #31) are excluded. Do not contact an explicit refusal, unmonitored inbox or hard-bounced address. Followups must be replies in existing threads, not new initial emails.
 
-**Do not change the approval cells or enable sender nodes yet.**
+## Already Verified (All QA runs are temporarily activated then shut down)
 
-The completion checklist for each batch is:
-- Confirm the n8n send/reply credential is `hyder@exampleabc.com`; the Sheets credential is `ExampleABC Google Sheets`. Never use a Jafaria account.
-- Confirm recipient addresses, full message bodies, original thread IDs for follow-ups, bounces, opt-outs, and replies immediately before launching.
-- Pass a controlled self-only end-to-end test of one-item loop, five-second spacing, Gmail message-ID capture, and reliable Sheets writeback.
-- For follow-ups, verify the **Reply** operation stays in the intended *existing* thread and does not direct the reply solely to the user's own address; this behavior requires a real sent-thread QA.
-- Only after an explicit final batch review may the separately reviewed live sender be enabled.
-- A production operator then changes the correct Control tab approval from `HOLD` to the exact approval option and manually executes the **approved live workflow exactly once**. The workflow consumes approval, sends sequentially, records Gmail IDs first, and updates original rows. Never retry an interrupted send until Gmail Sent and the log are reconciled.
+1. **QA4:** Two paced messages from the verified ExampleABC Gmail OAuth to the business's **own ExampleABC inbox**, each with a confirmed Gmail ID and n8n-to-**Automation QA** Google Sheets writeback; passes.
+2. **QA5:** Original ExampleABC Gmail message to the user's **own personal Gmail** `hakpilot@gmail.com`, followed by a Gmail Reply preserving the same Gmail thread; the intended recipient was present. Reply-all also added an internal HIRA copy; passes with this known behavior.
+3. **QA6:** Live read-only preflight executed inside n8n on Batch06: exactly 20 candidates and zero prior Gmail correspondence; passes.
+4. **QA7:** Live read-only original-thread checks inside n8n across 16 follow-ups: every original message matched its expected thread, was marked SENT (n8n represents Gmail labels as objects), and was addressed to the expected recipient; passes.
+5. **GitHub Actions** securely deploys locked workflows using repository secret `N8N_API_KEY`, binding existing **tested ExampleABC** Gmail and Sheets OAuth references. A separate offline validation of future one-time release scripts and embedded JavaScript succeeds. No API keys, OAuth tokens or passwords are committed in this repository.
 
-## Rules
+## Production Source Workflows (LOCKED)
 
-- **No prospect email is sent on importing these locked files.**
-- Gmail API acceptance is not proof of delivery. Monitor bounce replies and explicit opt-outs.
-- Never respond to `Tindall & Ranson (#24)` after an explicit no-interest; do not use hard-bounced addresses.
-- Keep Batch 06 initial outreach separate from Batch 03/04 replies.
-- Keep the source repository free of credentials and personal OAuth tokens.
+- [Batch06 initial outreach](https://auto.exampleabc.com/workflow/oOTxtl5hkMW3I9ZNntQE4): 26 nodes, all Gmail Sends and Sheets writes disabled; no schedule or active triggers
+- [Batch34 original-thread followups](https://auto.exampleabc.com/workflow/4zgYbHHOcmxaXuQ1): 24 nodes, all Gmail Replies and Sheets writes disabled
+
+Both have a strict approval gate, duplicate/status/draft/exception checks, single-item looping with 5-second pacing, Gmail confirmation, per-message ledger writeback, original status updates, and a final re-read of the entire send log before claiming completion.
+
+## Owner Final Approval — Required BEFORE Any Prospect Sending
+
+After reading the actual subjects, recipients and complete bodies, the owner can approve each batch **separately** in ChatGPT:
+
+- **Initial batch:** `I APPROVE BATCH 06: SEND 20 INITIAL EMAILS`
+- **Followups:** `I APPROVE BATCH 34: SEND 16 FIRST FOLLOWUPS`
+
+Specify desired send timing (for example "today" or "Monday morning"). Until that explicit approval, **keep BOTH control cells on HOLD**; do not click Execute, activate workflows, create approved release files, or send prospects through QA.
+
+Once approval is given, ChatGPT re-reads Google Sheets and Gmail, calculates a recipient fingerprint over the approved exact IDs/addresses, confirms the approval still applies, then changes only that batch's control cell to its exact approval option and creates **one corresponding version-controlled release request**:
+
+- `release_requests/Batch06_Approved.json` → [.github/workflows/batch06_approved_release.yml](.github/workflows/batch06_approved_release.yml)
+- `release_requests/Batch34_Followups_Approved.json` → [.github/workflows/batch34_approved_followups_release.yml](.github/workflows/batch34_approved_followups_release.yml)
+
+The release job creates a **distinct, signed-webhook, single-use** production workflow from the verified locked source and enables its sender/writeback nodes only in that one release copy. It verifies the approved contact fingerprint at runtime, the live one-use Google Sheets approval control, and the current Gmail/thread/suppression status **before** messaging. Each accepted Gmail message/reply is logged before the next item, with 5-second pacing. On completion (or any error), the job deactivates the release webhook; its execution and logs remain auditable. **No one needs to send messages manually.**
+
+### Failure / Partial-Send Rule
+
+If an execution fails or times out, **do not replay the release request or manually click Execute**. Approval is consumed to `RUNNING` before sending. First reconcile Gmail Sent with the batch's send log and original Prospect/Draft statuses; manually resolve any uncertain send before deciding a safe recovery. A successful Gmail API response is not proof of delivery; monitor bounces and opt-out replies.
+
+**No prospects have been sent by this automation as of October 23, 2026.**
