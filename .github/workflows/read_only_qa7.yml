@@ -1,0 +1,36 @@
+name: ExampleABC QA7 - 16 Existing Gmail Threads READ ONLY
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ExampleABC_QA7_Verify16Threads_ReadOnly.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-qa7-threads
+  cancel-in-progress: false
+
+jobs:
+  verify-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout workflow repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify Gmail threads and contact eligibility without sending
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "N8N_API_KEY missing"; exit 1; fi
+          python scripts/run_followup_threads_qa7.py
+      - name: Safety
+        if: always()
+        run: echo "Read-only verification; followup and new outreach controls remain HOLD."
