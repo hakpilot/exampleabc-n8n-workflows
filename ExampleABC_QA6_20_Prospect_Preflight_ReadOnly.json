@@ -261,7 +261,7 @@
         0
       ],
       "parameters": {
-        "content": "## QA6: PRE-APPROVAL SAFETY VERIFICATION\n\nReads 75 Prospects, 76 Email Drafts, Contact Exceptions, and Batch06 Send Log through ExampleABC Sheets. Uses identical 20-recipient screening logic from production and performs Gmail read-only search for previous communications. There are NO Gmail send nodes, NO Sheets write nodes and NO way to send prospect emails. One-time signed webhook, disabled after test.",
+        "content": "## QA6: PRE-APPROVAL SAFETY VERIFICATION\n\nReads 75 Prospects, 76 Email Drafts, Contact Exceptions, and Batch06 Send Log through ExampleABC Sheets. Uses identical 20-recipient screening logic from production and performs Gmail read-only search for previous communications. There are NO Gmail send nodes, NO Sheets write nodes and NO way to send prospect emails. One-time signed webhook, disabled after test.\n\nRead-only signed QA6 run requested after full send/writeback and thread QA succeeded.",
         "width": 1250,
         "height": 230
       }
