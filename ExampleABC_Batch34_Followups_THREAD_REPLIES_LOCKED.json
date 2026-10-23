@@ -494,8 +494,8 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "#": "={{ $json['Prospect #'] }}",
-            "Follow-up Date": "={{ $json['Follow-up Sent ET'] }}",
+            "#": "={{ $('Require Gmail Follow-up Message ID').item.json.id }}",
+            "Follow-up Date": "={{ $('Require Gmail Follow-up Message ID').item.json.sent_at }}",
             "Next Action": "Monitor reply, opt-out, bounce, meeting request"
           },
           "matchingColumns": [
@@ -548,16 +548,32 @@
     },
     {
       "id": "finish",
-      "name": "Require 16 Completed Followup Loops",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "name": "Re-read Followup Log After Loop",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
       "position": [
         3130,
         300
       ],
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const done=$input.all();if(done.length!==16)throw Error('Partial follow-ups: '+done.length+'; leave control RUNNING, reconcile before restart.');return [{json:{'Batch ID':'BATCH34-FOLLOWUP-20261023',Approval:'COMPLETE','Last Run':new Date().toISOString()}}];"
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch34 Followup Log",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
       }
     },
     {
@@ -633,9 +649,23 @@
         -120
       ],
       "parameters": {
-        "content": "## THREAD REPLIES: LOCKED UNTIL QA\nThis workflow is review-only. All write and Gmail reply nodes are deactivated; Batch34 Followup Control = HOLD. Do not enable until Gmail Reply tested with an **outgoing** original message to ensure only intended recipient gets email and the same thread is used. Each follow-up's original Gmail message and thread IDs are in Batch34 Followup Log. Only 16 eligible prospects; four known exceptions excluded. Never blindly rerun after partial send.",
+        "content": "## THREAD REPLIES: LOCKED UNTIL QA\nThis workflow is review-only. All write and Gmail reply nodes are deactivated; Batch34 Followup Control = HOLD. Do not enable until Gmail Reply tested with an **outgoing** original message to ensure only intended recipient gets email and the same thread is used. Each follow-up's original Gmail message and thread IDs are in Batch34 Followup Log. Only 16 eligible prospects; four known exceptions excluded. Never blindly rerun after partial send.\n\nQA5 confirmed Gmail message reply to a SENT original preserved its thread and included the original recipient (reply-all added an internal self-copy). Final follow-up completion now re-reads persisted Send Log Gmail IDs.",
         "width": 1500,
         "height": 260
+      }
+    },
+    {
+      "id": "audit2-followups",
+      "name": "Require 16 Confirmed Followup Gmail IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3430,
+        90
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst rows=$input.all().map(i=>i.json).filter(x=>x[\"Batch ID\"]===\"BATCH34-FOLLOWUP-20261023\");\nconst ids=new Set(rows.map(x=>Number(x[\"Prospect #\"])));\nif(rows.length!==16||ids.size!==16)throw Error(\"Followup ledger size changed; cannot mark complete.\");\nfor(const r of rows){\nif(r[\"Send Status\"]!==\"SENT\"||!String(r[\"Follow-up Gmail ID\"]||\"\").trim()||!String(r[\"Follow-up Sent ET\"]||\"\").trim())throw Error(\"Unlogged follow-up #\"+r[\"Prospect #\"]);\n}\nreturn [{json:{\"Batch ID\":\"BATCH34-FOLLOWUP-20261023\",Approval:\"COMPLETE\",\"Last Run\":new Date().toISOString()}}];"
       }
     }
   ],
@@ -776,7 +806,7 @@
       "main": [
         [
           {
-            "node": "Require 16 Completed Followup Loops",
+            "node": "Re-read Followup Log After Loop",
             "type": "main",
             "index": 0
           }
@@ -867,7 +897,18 @@
         ]
       ]
     },
-    "Require 16 Completed Followup Loops": {
+    "Re-read Followup Log After Loop": {
+      "main": [
+        [
+          {
+            "node": "Require 16 Confirmed Followup Gmail IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require 16 Confirmed Followup Gmail IDs": {
       "main": [
         [
           {
