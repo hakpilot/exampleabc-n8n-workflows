@@ -1,6 +1,11 @@
 name: Deploy ExampleABC LOCKED n8n Workflows
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'ExampleABC_Batch06_FINAL_REVIEW_SENDING_LOCKED.json'
+      - 'ExampleABC_Batch34_Followups_THREAD_REPLIES_LOCKED.json'
   workflow_dispatch:
     inputs:
       workflow:
@@ -34,7 +39,7 @@ jobs:
       - name: Deploy locked workflows through authenticated n8n Public API
         env:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
-          SELECTED: ${{ inputs.workflow }}
+          SELECTED: ${{ github.event.inputs.workflow || 'both' }}
         run: |
           if [ -z "$N8N_API_KEY" ]; then
             echo "Missing GitHub repository secret N8N_API_KEY; no workflow was deployed."
