@@ -1,0 +1,239 @@
+{
+  "name": "ExampleABC - Batches03-04 Follow-up Preview - READ ONLY",
+  "nodes": [
+    {
+      "id": "t1",
+      "name": "Manual Trigger - No Replies",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "p1",
+      "name": "Read Prospect Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        410,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Prospects",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "p2",
+      "name": "Store Prospect Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(x=>x.json)}}];"
+      }
+    },
+    {
+      "id": "d1",
+      "name": "Read Follow-up Drafts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        890,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Email Drafts",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "d2",
+      "name": "Store Follow-up Drafts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(x=>x.json)}}];"
+      }
+    },
+    {
+      "id": "v1",
+      "name": "Prepare 16 Reply Previews",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst P=$('Store Prospect Status').first().json.rows;\nconst D=$('Store Follow-up Drafts').first().json.rows;\nconst L=$input.all().map(i=>i.json);\nconst n=r=>Number(r['#']||r['Prospect #']);\nconst text=v=>String(v??'').trim();\nconst em=v=>text(v).toLowerCase();\nconst pm=new Map(P.map(x=>[n(x),x])),dm=new Map(D.map(x=>[n(x),x]));\nconst out=[];\nfor(const l of L){\n const id=n(l),p=pm.get(id),d=dm.get(id),issues=[],body=text(d?.['Follow-up Template']);\n if(!p||!d)issues.push('Prospect or template missing');\n if(!l['Original Gmail Message ID']||!l['Original Thread ID'])issues.push('No verified originating Gmail ID');\n if(p?.Status!=='Sent'||p?.['Reply Date']||p?.['Follow-up Date'])issues.push('Prospect already replied or followed up');\n if(text(l['Send Status'])!=='PENDING'||text(l['Follow-up Gmail ID'])||text(l['Follow-up Sent ET']))issues.push('Follow-up already logged');\n if(text(l['Review Status'])!=='READY')issues.push('Review disposition held');\n if(em(l.Recipient)!==em(p?.['Public Email'])||em(l.Recipient)!==em(d?.['Send To']))issues.push('Address differs from initial outreach');\n if(!body||!body.toLowerCase().includes('unsubscribe'))issues.push('Template missing/invalid');\n if([24,25,29,31].includes(id))issues.push('Explicit contact exception');\n out.push({json:{prospect_id:id,business:l.Business,to:l.Recipient,original_gmail_message_id:l['Original Gmail Message ID'],original_thread_id:l['Original Thread ID'],followup_body:body,eligibility:issues.length?'HOLD':'READY_PENDING_LIVE_GMAIL_THREAD_CHECK_AND_APPROVAL',issues,approved:false,sent:false}});\n}\nif(out.length!==16)throw Error('Expected exactly 16 follow-up rows, got '+out.length);\nreturn out;"
+      }
+    },
+    {
+      "id": "note",
+      "name": "READ ONLY - No replies",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "content": "## Follow-up review, no sending\n\nReads Prospects, Email Drafts and the dedicated Batch34 Followup Log. Produces 16 candidates with verified original Gmail IDs and templates. Does NOT reply to any messages or write any Sheets data. Explicitly excludes known bounces/unmonitored/ineligible prospects. Additional live thread checks and final user approval required.",
+        "width": 990,
+        "height": 240
+      }
+    },
+    {
+      "id": "log",
+      "name": "Read Batch34 Followup Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1370,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch34 Followup Log",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger - No Replies": {
+      "main": [
+        [
+          {
+            "node": "Read Prospect Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Prospect Status": {
+      "main": [
+        [
+          {
+            "node": "Store Prospect Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Prospect Status": {
+      "main": [
+        [
+          {
+            "node": "Read Follow-up Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Follow-up Drafts": {
+      "main": [
+        [
+          {
+            "node": "Store Follow-up Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Follow-up Drafts": {
+      "main": [
+        [
+          {
+            "node": "Read Batch34 Followup Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Batch34 Followup Log": {
+      "main": [
+        [
+          {
+            "node": "Prepare 16 Reply Previews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": []
+}
