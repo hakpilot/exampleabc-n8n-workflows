@@ -35,6 +35,8 @@ jobs:
               assert send and write and all(n.get('disabled') is True for n in send+write)
               print('SAFE LOCKED:',name,'nodes=',len(w['nodes']))
           PY
+      - name: Offline release plan and JavaScript syntax checks (no network writes)
+        run: python scripts/test_release_safety_offline.py
       - name: Check release requests do not exist prior to human approval
         run: |
           test ! -e release_requests/Batch06_Approved.json
