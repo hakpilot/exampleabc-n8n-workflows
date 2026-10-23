@@ -1,0 +1,457 @@
+{
+  "name": "ExampleABC QA7 - Verify 16 Gmail Threads READ ONLY",
+  "nodes": [
+    {
+      "id": "qa7web",
+      "name": "QA7 Signed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        100,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "exampleabc-qa7-readonly-original-threads-89a9d8ae2ec54c1a97483b6839bba17c",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "b3324c0a-17a5-410a-9010-d4224b3f97ec"
+    },
+    {
+      "id": "qa7auth",
+      "name": "QA7 Auth Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const h=$input.first().json.headers||{};if(h['x-exampleabc-qa-token']!=='__QA7_TOKEN__')throw Error('Unauthorized QA7');return [{json:{authorized:true}}];"
+      }
+    },
+    {
+      "id": "p",
+      "name": "Read Prospects",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1030,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Prospects",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "sp",
+      "name": "Store Prospects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "d",
+      "name": "Read Email Drafts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1490,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Email Drafts",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "sd",
+      "name": "Store Drafts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "ex",
+      "name": "Read Contact Exceptions",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1950,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Contact Exceptions",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "se",
+      "name": "Store Exceptions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "l",
+      "name": "Read Followup Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2410,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch34 Followup Log",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "prepare",
+      "name": "Build Verified Thread Reply Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst P=$('Store Prospects').first().json.rows,D=$('Store Drafts').first().json.rows,X=$('Store Exceptions').first().json.rows,L=$input.all().map(i=>i.json);\nconst n=r=>Number(r['#']??r['Prospect #']);const t=v=>String(v??'').trim();const em=v=>t(v).toLowerCase();\nconst pm=new Map(P.map(v=>[n(v),v])),dm=new Map(D.map(v=>[n(v),v])),ex=new Set(X.map(v=>Number(v.Prospect)));\nconst fail=[],queue=[];\nfor(const l of L){\n const id=n(l),p=pm.get(id),d=dm.get(id),issues=[],body=t(d?.['Follow-up Template']),to=em(l.Recipient);\n if(!p||!d)issues.push('Missing prospect/draft');\n if(!/^[0-9a-f]{16,}$/.test(t(l['Original Gmail Message ID']))||!t(l['Original Thread ID']))issues.push('Original Gmail message/thread ID absent');\n if(p?.Status!=='Sent'||t(p?.['Follow-up Date'])||t(p?.['Reply Date']))issues.push('Prospect not currently eligible');\n if(t(l['Send Status'])!=='PENDING'||t(l['Follow-up Gmail ID']))issues.push('Follow-up already processed');\n if(t(l['Review Status'])!=='READY')issues.push('Held by reviewer');\n if(to!==em(p?.['Public Email'])||to!==em(d?.['Send To']))issues.push('Email mismatch');\n if(!body||!body.toLowerCase().includes('unsubscribe'))issues.push('Template invalid');\n if(ex.has(id)||[24,25,29,31].includes(id))issues.push('Blocked contact');\n if(issues.length)fail.push('#'+id+': '+issues.join(','));\n else queue.push({id,to,body,orig_message_id:l['Original Gmail Message ID'],orig_thread_id:l['Original Thread ID'],batch_id:'BATCH34-FOLLOWUP-20261023'});\n}\nif(fail.length||queue.length!==16)throw Error('Follow-up send ABORT '+fail.join('|')+' candidates='+queue.length);\nreturn queue.map(x=>({json:x}));\n"
+      }
+    },
+    {
+      "id": "loop",
+      "name": "Loop One Followup At A Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2890,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "thread",
+      "name": "Inspect Original Gmail Thread",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3120,
+        420
+      ],
+      "parameters": {
+        "resource": "thread",
+        "operation": "get",
+        "threadId": "={{ $json.orig_thread_id }}",
+        "simple": false,
+        "options": {
+          "returnMessages": true
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "check",
+      "name": "Fail Closed on Replies or Additional Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst t=$input.item.json;\nconst c=$('Loop One Followup At A Time').item.json;\nconst msgs=Array.isArray(t.messages)?t.messages:[];\nif(t.id!==c.orig_thread_id||msgs.length!==1||msgs[0].id!==c.orig_message_id)throw Error('Thread changed since review; no follow-up to '+c.to);\nconst labels=msgs[0].labelIds||[];\nif(!labels.includes('SENT'))throw Error('Original not confirmed as SENT: '+c.to);\nreturn {json:{...c,verified:true}};\n"
+      }
+    },
+    {
+      "id": "qa7end",
+      "name": "QA7 Read-Only Verification Complete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3150,
+        70
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{status:'QA7_DONE',scope:'read-only 16 original Gmail threads',approved:false,sent:false}}];"
+      }
+    },
+    {
+      "id": "qa7note",
+      "name": "QA7 READ ONLY",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -50
+      ],
+      "parameters": {
+        "content": "## QA7: 16 live Gmail original-thread checks\n\nRead-only workflow: current Prospects, Email Drafts, exceptions and Batch34 Followup Log; builds 16 validated candidates and fetches their original Gmail threads one at a time. Stops on any new reply, unexpected thread or missing original message. NO sending, NO Sheets writes, NO contact with prospects. Runs once through token-guarded webhook and is deactivated after CI verification.",
+        "width": 1550,
+        "height": 250
+      }
+    }
+  ],
+  "connections": {
+    "QA7 Signed Webhook": {
+      "main": [
+        [
+          {
+            "node": "QA7 Auth Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA7 Auth Guard": {
+      "main": [
+        [
+          {
+            "node": "Read Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Prospects": {
+      "main": [
+        [
+          {
+            "node": "Store Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Prospects": {
+      "main": [
+        [
+          {
+            "node": "Read Email Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Email Drafts": {
+      "main": [
+        [
+          {
+            "node": "Store Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Drafts": {
+      "main": [
+        [
+          {
+            "node": "Read Contact Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Contact Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Store Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Read Followup Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Followup Log": {
+      "main": [
+        [
+          {
+            "node": "Build Verified Thread Reply Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Verified Thread Reply Queue": {
+      "main": [
+        [
+          {
+            "node": "Loop One Followup At A Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop One Followup At A Time": {
+      "main": [
+        [
+          {
+            "node": "QA7 Read-Only Verification Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Inspect Original Gmail Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspect Original Gmail Thread": {
+      "main": [
+        [
+          {
+            "node": "Fail Closed on Replies or Additional Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fail Closed on Replies or Additional Messages": {
+      "main": [
+        [
+          {
+            "node": "Loop One Followup At A Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
