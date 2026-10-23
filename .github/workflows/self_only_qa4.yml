@@ -1,0 +1,36 @@
+name: ExampleABC QA4 - Two Self-Only Emails
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ExampleABC_QA4_Self_Only_2_Emails.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-qa4-self-only
+  cancel-in-progress: false
+
+jobs:
+  qa4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout ExampleABC workflow repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify exactly two internal messages and two QA sheet updates
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "Missing n8n API secret"; exit 1; fi
+          python scripts/run_self_only_qa4.py
+      - name: No outreach was authorized
+        if: always()
+        run: echo "QA4 is limited to the ExampleABC self-inbox and Automation QA sheet. This job never authorizes prospect emails."
