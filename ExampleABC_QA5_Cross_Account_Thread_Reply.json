@@ -1,0 +1,468 @@
+{
+  "name": "ExampleABC QA5 - Self-Owned Cross-Account Thread Reply",
+  "nodes": [
+    {
+      "id": "web",
+      "name": "QA5 Signed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        170,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "exampleabc-qa5-owned-accounts-reply-6b3aac7142de48118b35c93fa91b6218",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "b930ed7a-d1c7-49cc-b326-78213045e728"
+    },
+    {
+      "id": "auth",
+      "name": "QA5 Signature Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const h=$input.first().json.headers||{};if(h['x-exampleabc-qa-token']!=='__INJECT_QA5_TOKEN__')throw Error('Unauthorized internal QA5');return [{json:{authorized:true}}];"
+      }
+    },
+    {
+      "id": "read",
+      "name": "Read QA Control Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        630,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "gate",
+      "name": "Require One-Time QA5 Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const x=$input.all().map(i=>i.json).filter(r=>r.TestID==='EXAMPLEABC-QA-20261022');if(x.length!==1||x[0].Status!=='READY_QA5')throw Error('QA5 HOLD');return [{json:{TestID:'EXAMPLEABC-QA-20261022',Status:'QA5_RUNNING',Timestamp:new Date().toISOString(),'Message ID':''}}];"
+      }
+    },
+    {
+      "id": "lock",
+      "name": "Consume QA5 Test Permission",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1080,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TestID": "={{ $json.TestID }}",
+            "Status": "QA5_RUNNING",
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Message ID": ""
+          },
+          "matchingColumns": [
+            "TestID"
+          ],
+          "schema": [
+            {
+              "id": "TestID",
+              "displayName": "TestID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "payload",
+      "name": "Generate One Internal Cross-Account Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1310,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{to:'hakpilot@gmail.com',subject:'ExampleABC QA5 Cross-Account Thread Test',body:'Controlled internal ExampleABC-to-personal email. This is NOT prospect outreach.'}}];"
+      }
+    },
+    {
+      "id": "guard",
+      "name": "Only Send to Personal Gmail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const x=$input.item.json;if(x.to!=='hakpilot@gmail.com')throw Error('QA5 unauthorized destination');return $input.item;"
+      }
+    },
+    {
+      "id": "first",
+      "name": "Send Original to Personal Account",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1770,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Hyder Khan"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "extract",
+      "name": "Require Original Gmail Message ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const x=$input.item.json;if(!x.id||!x.threadId)throw Error('Original message not confirmed');return {json:{original_id:x.id,original_thread:x.threadId,body:'Controlled QA5 reply within an ExampleABC-to-personal-Gmail sent thread. This is NOT prospect outreach.'}};"
+      }
+    },
+    {
+      "id": "reply",
+      "name": "Reply to Original Sent Message",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2230,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "reply",
+        "messageId": "={{ $json.original_id }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Hyder Khan",
+          "replyToSenderOnly": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "verify",
+      "name": "Verify Reply Thread (Recipient Checked Externally)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2460,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const m=$input.item.json,orig=$('Require Original Gmail Message ID').item.json;if(!m.id||!m.threadId)throw Error('Gmail reply did not return confirmation');if(m.threadId!==orig.original_thread)throw Error('Reply THREAD MISMATCH: '+m.threadId);return {json:{TestID:'EXAMPLEABC-QA-20261022',Status:'QA5_REPLY_THREAD_MATCH_CHECK_RECIPIENT',Timestamp:new Date().toISOString(),'Message ID':m.id}};"
+      }
+    },
+    {
+      "id": "write",
+      "name": "Log QA5 Thread Reply Result",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2690,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TestID": "={{ $json.TestID }}",
+            "Status": "={{ $json.Status }}",
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Message ID": "={{ $json['Message ID'] }}"
+          },
+          "matchingColumns": [
+            "TestID"
+          ],
+          "schema": [
+            {
+              "id": "TestID",
+              "displayName": "TestID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "note",
+      "name": "QA5 PURPOSE / SAFETY",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "content": "## Internal test only\n\nTemporarily activated for ONE token-protected request, with one-time Automation QA status gate. Sends original from ExampleABC to hakpilot@gmail.com, replies to that same sent message via n8n Gmail Reply, checks thread IDs, logs to Automation QA. Then the GitHub test runner deactivates the workflow. External Gmail verification must confirm the reply recipient is hakpilot@gmail.com (not hyder@exampleabc.com) BEFORE production followups may be enabled.",
+        "width": 1420,
+        "height": 230
+      }
+    }
+  ],
+  "connections": {
+    "QA5 Signed Webhook": {
+      "main": [
+        [
+          {
+            "node": "QA5 Signature Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA5 Signature Gate": {
+      "main": [
+        [
+          {
+            "node": "Read QA Control Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read QA Control Row": {
+      "main": [
+        [
+          {
+            "node": "Require One-Time QA5 Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require One-Time QA5 Status": {
+      "main": [
+        [
+          {
+            "node": "Consume QA5 Test Permission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consume QA5 Test Permission": {
+      "main": [
+        [
+          {
+            "node": "Generate One Internal Cross-Account Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate One Internal Cross-Account Message": {
+      "main": [
+        [
+          {
+            "node": "Only Send to Personal Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only Send to Personal Gmail": {
+      "main": [
+        [
+          {
+            "node": "Send Original to Personal Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Original to Personal Account": {
+      "main": [
+        [
+          {
+            "node": "Require Original Gmail Message ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require Original Gmail Message ID": {
+      "main": [
+        [
+          {
+            "node": "Reply to Original Sent Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to Original Sent Message": {
+      "main": [
+        [
+          {
+            "node": "Verify Reply Thread (Recipient Checked Externally)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Reply Thread (Recipient Checked Externally)": {
+      "main": [
+        [
+          {
+            "node": "Log QA5 Thread Reply Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
