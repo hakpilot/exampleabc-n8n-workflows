@@ -59,7 +59,13 @@ def main():
                 if run.get("status") in ("success","error","crashed","canceled"):break
             time.sleep(4)
         if not run:raise RuntimeError("QA7 execution not observed")
-        if run.get("status")!="success":raise RuntimeError("QA7 execution "+str(run["id"])+" status "+str(run.get("status")))
+        if run.get("status")!="success":
+            details=api("GET","/executions/"+str(run["id"])+"?includeData=true")
+            result=details.get("data",{}).get("resultData",{})
+            e=result.get("error",{})
+            node=result.get("lastNodeExecuted","unknown")
+            msg=str(e.get("message") or e.get("description") or "No error detail returned")[:600]
+            raise RuntimeError("QA7 execution "+str(run["id"])+" status "+str(run.get("status"))+"; failing node="+str(node)+"; error="+msg)
         full=api("GET","/executions/"+str(run["id"])+"?includeData=true")
         data=full.get("data",{}).get("resultData",{}).get("runData",{})
         original_count=len(data.get("Inspect Original Gmail Thread",[]))
