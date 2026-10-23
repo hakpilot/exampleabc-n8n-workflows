@@ -784,7 +784,7 @@
         10
       ],
       "parameters": {
-        "content": "## FINAL REVIEW ONLY — SENDING LOCKED\n\nThis workflow is intentionally INACTIVE. Gmail Send and all Sheets write/update nodes are DEACTIVATED. Batch06 Control!B2 is HOLD, not approved. DO NOT execute this workflow for prospect sending. Live sending requires full end-to-end QA of pacing, accurate Gmail/recipient pairing, and ledger-first writeback; then user approval. Accidental execution cannot send Gmail while the node is deactivated.\n\nOriginal 20 prospects remain PENDING. You can review Email Drafts rows 57–76 and Batch06 Send Log. Follow-ups need separate thread-aware workflow.\n\nGitHub Actions safe deployment verification requested Oct 23, 2026. Both batch controls must remain HOLD until end-to-end QA is independently verified.",
+        "content": "## FINAL REVIEW ONLY — SENDING LOCKED\n\nThis workflow is intentionally INACTIVE. Gmail Send and all Sheets write/update nodes are DEACTIVATED. Batch06 Control!B2 is HOLD, not approved. DO NOT execute this workflow for prospect sending. Live sending requires full end-to-end QA of pacing, accurate Gmail/recipient pairing, and ledger-first writeback; then user approval. Accidental execution cannot send Gmail while the node is deactivated.\n\nOriginal 20 prospects remain PENDING. You can review Email Drafts rows 57–76 and Batch06 Send Log. Follow-ups need separate thread-aware workflow.\n\nGitHub Actions safe deployment verification requested Oct 23, 2026. Both batch controls must remain HOLD until end-to-end QA is independently verified.\n\nGitHub deployment verification after API secret setup; maintain approval HOLD and locked sending.",
         "width": 1300,
         "height": 260
       }
