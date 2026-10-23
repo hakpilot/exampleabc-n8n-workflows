@@ -1,0 +1,36 @@
+name: ExampleABC QA6 - Production Data Preflight Only
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ExampleABC_QA6_20_Prospect_Preflight_ReadOnly.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-readonly-qa6
+  cancel-in-progress: false
+
+jobs:
+  production-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout ExampleABC repo
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify 20 actual recipients with n8n Gmail and Google Sheets READ ONLY
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "Missing n8n API secret"; exit 1; fi
+          python scripts/run_batch06_readonly_qa6.py
+      - name: Safety reminder
+        if: always()
+        run: echo "The QA6 run has no Gmail send nodes or Sheets writes. Live Batch06 stays HOLD."
