@@ -1,0 +1,42 @@
+name: Validate ExampleABC Release Scripts (No Sends)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/launch_approved_batch06.py'
+      - 'scripts/launch_approved_followups.py'
+      - '.github/workflows/validate_release_scripts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax-and-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile release Python scripts (no execution)
+        run: python -m py_compile scripts/launch_approved_batch06.py scripts/launch_approved_followups.py
+      - name: Validate locked production sources
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ['ExampleABC_Batch06_FINAL_REVIEW_SENDING_LOCKED.json', 'ExampleABC_Batch34_Followups_THREAD_REPLIES_LOCKED.json']:
+              w=json.loads(Path(name).read_text())
+              assert not w.get('active')
+              send=[n for n in w['nodes'] if n['type']=='n8n-nodes-base.gmail' and n['parameters'].get('operation') in ('reply','send')]
+              write=[n for n in w['nodes'] if n['type']=='n8n-nodes-base.googleSheets' and n['parameters'].get('operation')=='update']
+              assert send and write and all(n.get('disabled') is True for n in send+write)
+              print('SAFE LOCKED:',name,'nodes=',len(w['nodes']))
+          PY
+      - name: Check release requests do not exist prior to human approval
+        run: |
+          test ! -e release_requests/Batch06_Approved.json
+          test ! -e release_requests/Batch34_Followups_Approved.json
+          echo 'No prospect sending authorized by these checks.'
