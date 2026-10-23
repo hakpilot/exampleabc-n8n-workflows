@@ -1,0 +1,487 @@
+{
+  "name": "ExampleABC QA4 - AUTHORIZED Self-Only Loop 2",
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "QA Signed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        180,
+        320
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "exampleabc-20261023-self-only-qa4-4d2d5f3af6b54eb6b1254dcbd70f2801",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "e5f34cb3-b4bd-47c0-b9bf-11c4a9b62442"
+    },
+    {
+      "id": "token",
+      "name": "Require Secure QA Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        430,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const headers=$input.first().json.headers||{};if(headers['x-exampleabc-qa-token']!=='__INJECT_QA_TOKEN__')throw Error('Unauthorized internal QA');return [{json:{authorized:true}}];"
+      }
+    },
+    {
+      "id": "read",
+      "name": "Read Isolated QA Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        680,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "check",
+      "name": "One-Time QA Status Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        930,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows=$input.all().map(i=>i.json).filter(x=>x.TestID==='EXAMPLEABC-QA-20261022');if(rows.length!==1||rows[0].Status!=='READY_QA4')throw Error('QA4 not armed; no Gmail sends allowed');return [{json:{TestID:'EXAMPLEABC-QA-20261022',Status:'QA4_RUNNING',Timestamp:new Date().toISOString(),'Message ID':''}}];"
+      }
+    },
+    {
+      "id": "lock",
+      "name": "Consume QA Approval Before Any Send",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1180,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TestID": "={{ $json.TestID }}",
+            "Status": "QA4_RUNNING",
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Message ID": ""
+          },
+          "matchingColumns": [
+            "TestID"
+          ],
+          "schema": [
+            {
+              "id": "TestID",
+              "displayName": "TestID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "generate",
+      "name": "Prepare Exactly TWO Self Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1430,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [1,2].map(qa_index=>({json:{qa_index,to:'hyder@exampleabc.com',subject:'ExampleABC QA4 Loop '+qa_index+' of 2',body:'Internal ExampleABC workflow QA '+qa_index+' of 2. No prospect was contacted.'}}));"
+      }
+    },
+    {
+      "id": "loop",
+      "name": "Loop One QA Message",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1690,
+        320
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "guard",
+      "name": "Enforce Internal Recipient Only",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1930,
+        440
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const x=$input.item.json;if(x.to!=='hyder@exampleabc.com'||![1,2].includes(Number(x.qa_index)))throw Error('Invalid QA send destination');return $input.item;"
+      }
+    },
+    {
+      "id": "gmail",
+      "name": "Send QA to Self",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2160,
+        440
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Hyder Khan"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "confirm",
+      "name": "Verify Gmail ID and Loop Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        440
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const m=$input.item.json;const x=$('Loop One QA Message').item.json;if(!m.id||x.to!=='hyder@exampleabc.com'||![1,2].includes(x.qa_index))throw Error('QA Gmail ID or recipient verification failed');return {json:{TestID:'EXAMPLEABC-QA-20261022',Status:'QA4_SENT_'+x.qa_index,Timestamp:new Date().toISOString(),'Message ID':m.id}};"
+      }
+    },
+    {
+      "id": "log",
+      "name": "Write Confirmed QA Send to QA Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2650,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TestID": "={{ $json.TestID }}",
+            "Status": "={{ $json.Status }}",
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Message ID": "={{ $json['Message ID'] }}"
+          },
+          "matchingColumns": [
+            "TestID"
+          ],
+          "schema": [
+            {
+              "id": "TestID",
+              "displayName": "TestID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "wait",
+      "name": "Pause 5 Seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2890,
+        440
+      ],
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "done",
+      "name": "Report QA4 Loop Complete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{qa:'complete',recipient:'hyder@exampleabc.com',intended_messages:2}}];"
+      }
+    },
+    {
+      "id": "note",
+      "name": "SAFETY: Self-Only QA",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        500,
+        5
+      ],
+      "parameters": {
+        "content": "## QA4: SELF-ONLY TEST\n\nRuns only via header-token-protected webhook and only once when Automation QA!B2 is READY_QA4. Immediately changes the status to QA4_RUNNING. Exactly two messages target **hyder@exampleabc.com**, never a prospect; each Gmail response ID is logged to Automation QA. This flow is activated only temporarily for controlled testing, then deactivated by GitHub Actions. Never reuse as production outreach.",
+        "width": 1280,
+        "height": 235
+      }
+    }
+  ],
+  "connections": {
+    "QA Signed Webhook": {
+      "main": [
+        [
+          {
+            "node": "Require Secure QA Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require Secure QA Request": {
+      "main": [
+        [
+          {
+            "node": "Read Isolated QA Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Isolated QA Row": {
+      "main": [
+        [
+          {
+            "node": "One-Time QA Status Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One-Time QA Status Gate": {
+      "main": [
+        [
+          {
+            "node": "Consume QA Approval Before Any Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consume QA Approval Before Any Send": {
+      "main": [
+        [
+          {
+            "node": "Prepare Exactly TWO Self Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Exactly TWO Self Messages": {
+      "main": [
+        [
+          {
+            "node": "Loop One QA Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop One QA Message": {
+      "main": [
+        [
+          {
+            "node": "Report QA4 Loop Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enforce Internal Recipient Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enforce Internal Recipient Only": {
+      "main": [
+        [
+          {
+            "node": "Send QA to Self",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send QA to Self": {
+      "main": [
+        [
+          {
+            "node": "Verify Gmail ID and Loop Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Gmail ID and Loop Source": {
+      "main": [
+        [
+          {
+            "node": "Write Confirmed QA Send to QA Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Confirmed QA Send to QA Row": {
+      "main": [
+        [
+          {
+            "node": "Pause 5 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pause 5 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Loop One QA Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
