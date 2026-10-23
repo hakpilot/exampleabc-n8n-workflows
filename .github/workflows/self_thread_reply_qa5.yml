@@ -1,0 +1,36 @@
+name: ExampleABC QA5 - Gmail Thread Reply Safety
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ExampleABC_QA5_Cross_Account_Thread_Reply.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-qa5-one-time
+  cancel-in-progress: false
+
+jobs:
+  internal-cross-account:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Send one original and one thread reply to owned personal Gmail only
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "n8n API secret missing"; exit 1; fi
+          python scripts/run_cross_account_reply_qa5.py
+      - name: Never authorize external prospect emails
+        if: always()
+        run: echo "Internal QA only. Both outreach batch controls remain HOLD."
