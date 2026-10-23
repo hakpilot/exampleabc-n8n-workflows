@@ -1,0 +1,35 @@
+name: ExampleABC Batch06 - Approved One-Time Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release_requests/Batch06_Approved.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-batch06-production-release
+  cancel-in-progress: false
+
+jobs:
+  one-time-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout reviewed release artifacts
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Launch reviewed 20-email batch exactly once via n8n
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "N8N_API_KEY missing. No emails were requested."; exit 1; fi
+          python scripts/launch_approved_batch06.py
+      - name: Do not retry failed release without reconciliation
+        if: failure()
+        run: echo "RELEASE HALTED — inspect Gmail Sent and Batch06 Send Log. Never rerun blindly."
