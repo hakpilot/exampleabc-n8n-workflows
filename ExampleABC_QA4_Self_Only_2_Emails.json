@@ -333,7 +333,7 @@
         5
       ],
       "parameters": {
-        "content": "## QA4: SELF-ONLY TEST\n\nRuns only via header-token-protected webhook and only once when Automation QA!B2 is READY_QA4. Immediately changes the status to QA4_RUNNING. Exactly two messages target **hyder@exampleabc.com**, never a prospect; each Gmail response ID is logged to Automation QA. This flow is activated only temporarily for controlled testing, then deactivated by GitHub Actions. Never reuse as production outreach.",
+        "content": "## QA4: SELF-ONLY TEST\n\nRuns only via header-token-protected webhook and only once when Automation QA!B2 is READY_QA4. Immediately changes the status to QA4_RUNNING. Exactly two messages target **hyder@exampleabc.com**, never a prospect; each Gmail response ID is logged to Automation QA. This flow is activated only temporarily for controlled testing, then deactivated by GitHub Actions. Never reuse as production outreach.\n\nOct 23 self-only QA run requested. External outreach remains locked.",
         "width": 1280,
         "height": 235
       }
