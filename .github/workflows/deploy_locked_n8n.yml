@@ -1,0 +1,50 @@
+name: Deploy ExampleABC LOCKED n8n Workflows
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow:
+        description: "Which locked workflow to deploy (never sends)"
+        required: true
+        type: choice
+        options:
+          - both
+          - ExampleABC_Batch06_FINAL_REVIEW_SENDING_LOCKED.json
+          - ExampleABC_Batch34_Followups_THREAD_REPLIES_LOCKED.json
+        default: both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-n8n-locked-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout workflow repository
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Deploy locked workflows through authenticated n8n Public API
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          SELECTED: ${{ inputs.workflow }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then
+            echo "Missing GitHub repository secret N8N_API_KEY; no workflow was deployed."
+            exit 1
+          fi
+          if [ "$SELECTED" = "both" ]; then
+            python scripts/deploy_locked_n8n.py
+          else
+            python scripts/deploy_locked_n8n.py "$SELECTED"
+          fi
+      - name: Deployment safety reminder
+        if: success()
+        run: echo "Deployment only. Sending remains DISABLED and approval controls remain HOLD."
