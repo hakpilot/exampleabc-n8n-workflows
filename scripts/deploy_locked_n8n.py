@@ -81,13 +81,27 @@ def main():
     filenames = sys.argv[1:] or sorted(ALLOWED)
     if set(filenames) - ALLOWED:
         raise RuntimeError("Only explicitly whitelisted locked workflows can be deployed.")
-    creds = pages("/credentials")
+    # n8n v2.3.1 Public API does not expose GET /credentials (returns 405).
+    # Resolve only from two EXISTING ExampleABC workflows that were already
+    # tested successfully. Read-only; never reads credential secret data.
+    approved_source_nodes = {
+        "googleSheetsOAuth2Api": ("MoW6SECTxE1mNYpxGy7Tc", "Update ONLY Automation QA"),
+        "gmailOAuth2": ("ymCruFvw0MQe-jfBKFGxt", "Send QA To SELF Only"),
+    }
     wanted = {}
-    for c in creds:
-        if c.get("type") in CREDENTIAL_TYPES:
-            wanted[(c.get("type"), c.get("name"))] = c["id"]
-    if not wanted:
-        raise RuntimeError("Credential listing empty. Need API credential:list scope.")
+    for typ, (workflow_id, node_name) in approved_source_nodes.items():
+        wf = api("GET", "/workflows/" + urllib.parse.quote(workflow_id))
+        matching = [n for n in wf.get("nodes", []) if n.get("name") == node_name]
+        if len(matching) != 1:
+            raise RuntimeError(f"Trusted QA source missing expected node: {node_name}")
+        ref = matching[0].get("credentials", {}).get(typ, {})
+        if not ref.get("id") or not ref.get("name"):
+            raise RuntimeError(f"Trusted QA credential reference absent for {node_name}")
+        if typ == "googleSheetsOAuth2Api" and ref["name"] != "ExampleABC Google Sheets":
+            raise RuntimeError("QA Sheets credential is NOT the verified ExampleABC account.")
+        if typ == "gmailOAuth2" and ref["name"] not in ("hyder@exampleabc.com", "ExampleABC Gmail"):
+            raise RuntimeError("QA Gmail credential is NOT an approved ExampleABC identity.")
+        wanted[typ] = {"id": ref["id"], "name": ref["name"]}
     workflows = pages("/workflows")
     for filename in filenames:
         source = validate_locked(json.loads(Path(filename).read_text(encoding="utf-8")))
@@ -95,11 +109,13 @@ def main():
             for typ, ref in node.get("credentials", {}).items():
                 if typ not in CREDENTIAL_TYPES:
                     raise RuntimeError("Unexpected credential type: " + typ)
-                key = (typ, ref.get("name"))
-                if key not in wanted:
-                    raise RuntimeError(f"Missing authorized credential: {key[1]} ({typ}). "
-                                       "No fallback to Jafaria credentials permitted.")
-                ref["id"] = wanted[key]
+                if typ not in wanted:
+                    raise RuntimeError("Trusted ExampleABC credential not found for " + typ)
+                if typ == "googleSheetsOAuth2Api" and ref.get("name") != "ExampleABC Google Sheets":
+                    raise RuntimeError("Sheets node references an unauthorized credential name")
+                if typ == "gmailOAuth2" and ref.get("name") not in ("hyder@exampleabc.com", "ExampleABC Gmail"):
+                    raise RuntimeError("Gmail node references an unauthorized credential name")
+                ref.update(wanted[typ])
         matches = [x for x in workflows if x.get("name") == source["name"]]
         if len(matches) > 1:
             raise RuntimeError("Ambiguous existing workflows with same name; abort")
