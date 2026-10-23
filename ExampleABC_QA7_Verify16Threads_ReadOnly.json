@@ -265,7 +265,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "\nconst t=$input.item.json;\nconst c=$('Loop One Followup At A Time').item.json;\nconst msgs=Array.isArray(t.messages)?t.messages:[];\nif(t.id!==c.orig_thread_id||msgs.length!==1||msgs[0].id!==c.orig_message_id)throw Error('Thread changed since review; no follow-up to '+c.to);\nconst labels=msgs[0].labelIds||[];\nif(!labels.includes('SENT'))throw Error('Original not confirmed as SENT: '+c.to);\nreturn {json:{...c,verified:true}};\n"
+        "jsCode": "\nconst t=$input.item.json;\nconst c=$('Loop One Followup At A Time').item.json;\nconst msgs=Array.isArray(t.messages)?t.messages:[];\nif(t.id!==c.orig_thread_id||msgs.length!==1||msgs[0].id!==c.orig_message_id)throw Error('Thread changed since review; no follow-up to '+c.to);\nconst m=msgs[0];\nconst rawLabels=m.labelIds||m.labels||[];\nif(!Array.isArray(rawLabels)||!rawLabels.some(l=>l==='SENT'||l?.id==='SENT'||l?.name==='SENT'))throw Error('Original not confirmed as SENT: '+c.to);\nconst originalTo=String(m.To||m.payload?.headers?.find(h=>String(h.name).toLowerCase()==='to')?.value||'').toLowerCase();\nif(!originalTo.includes(String(c.to).toLowerCase()))throw Error('Original sent thread recipient does not match '+c.to);\nreturn {json:{...c,verified:true}};\n"
       }
     },
     {
