@@ -332,7 +332,7 @@
         300
       ],
       "parameters": {
-        "content": "## Internal test only\n\nTemporarily activated for ONE token-protected request, with one-time Automation QA status gate. Sends original from ExampleABC to hakpilot@gmail.com, replies to that same sent message via n8n Gmail Reply, checks thread IDs, logs to Automation QA. Then the GitHub test runner deactivates the workflow. External Gmail verification must confirm the reply recipient is hakpilot@gmail.com (not hyder@exampleabc.com) BEFORE production followups may be enabled.",
+        "content": "## Internal test only\n\nTemporarily activated for ONE token-protected request, with one-time Automation QA status gate. Sends original from ExampleABC to hakpilot@gmail.com, replies to that same sent message via n8n Gmail Reply, checks thread IDs, logs to Automation QA. Then the GitHub test runner deactivates the workflow. External Gmail verification must confirm the reply recipient is hakpilot@gmail.com (not hyder@exampleabc.com) BEFORE production followups may be enabled.\n\nQA5 gated cross-account test requested Oct 23; no prospect email allowed.",
         "width": 1420,
         "height": 230
       }
