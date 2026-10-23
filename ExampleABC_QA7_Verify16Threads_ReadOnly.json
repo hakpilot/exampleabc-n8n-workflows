@@ -292,7 +292,7 @@
         -50
       ],
       "parameters": {
-        "content": "## QA7: 16 live Gmail original-thread checks\n\nRead-only workflow: current Prospects, Email Drafts, exceptions and Batch34 Followup Log; builds 16 validated candidates and fetches their original Gmail threads one at a time. Stops on any new reply, unexpected thread or missing original message. NO sending, NO Sheets writes, NO contact with prospects. Runs once through token-guarded webhook and is deactivated after CI verification.",
+        "content": "## QA7: 16 live Gmail original-thread checks\n\nRead-only workflow: current Prospects, Email Drafts, exceptions and Batch34 Followup Log; builds 16 validated candidates and fetches their original Gmail threads one at a time. Stops on any new reply, unexpected thread or missing original message. NO sending, NO Sheets writes, NO contact with prospects. Runs once through token-guarded webhook and is deactivated after CI verification.\n\n16-contact read-only Friday preflight requested; live follow-up sending remains disabled.",
         "width": 1550,
         "height": 250
       }
