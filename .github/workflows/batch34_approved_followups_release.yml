@@ -1,0 +1,35 @@
+name: ExampleABC Followups - Approved One-Time Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release_requests/Batch34_Followups_Approved.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-batch34-one-time-followups
+  cancel-in-progress: false
+
+jobs:
+  reply-once:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout approved release request
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Send exactly 16 approved original-thread replies via n8n once
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "Missing N8N_API_KEY"; exit 1; fi
+          python scripts/launch_approved_followups.py
+      - name: Do not retry partial followup sends
+        if: failure()
+        run: echo "STOP — reconcile Gmail Sent and the followup log before any retry."
