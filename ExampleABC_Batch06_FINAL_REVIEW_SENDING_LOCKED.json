@@ -545,9 +545,9 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "#": "={{ $json['Prospect #'] }}",
+            "#": "={{ $('Require Gmail ID and restore candidate').item.json.prospect_id }}",
             "Status": "Sent",
-            "First Email Date": "={{ $json['Sent At ET'] }}",
+            "First Email Date": "={{ $('Require Gmail ID and restore candidate').item.json.sent_at }}",
             "Next Action": "Monitor replies/bounces/opt-outs; consider first follow-up only if eligible"
           },
           "matchingColumns": [
@@ -627,9 +627,9 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "#": "={{ $json['#'] }}",
+            "#": "={{ $('Require Gmail ID and restore candidate').item.json.prospect_id }}",
             "Draft Status": "Sent",
-            "Sent Date": "={{ $json['First Email Date'] }}"
+            "Sent Date": "={{ $('Require Gmail ID and restore candidate').item.json.sent_at }}"
           },
           "matchingColumns": [
             "#"
@@ -690,16 +690,32 @@
     },
     {
       "id": "audit",
-      "name": "Require ALL 20 sends logged",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "name": "Re-read Batch06 Ledger After Loop",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
       "position": [
         3750,
         90
       ],
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "\nconst out=$input.all();if(out.length!==20)throw Error('Expected 20 completed loop records; got '+out.length+'. Leave approval RUNNING and reconcile Gmail before retry.');return [{json:{\"Batch ID\":\"BATCH06-20261022\",Approval:\"COMPLETE\",\"Last Run\":new Date().toISOString()}}];\n"
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch06 Send Log",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
       }
     },
     {
@@ -784,9 +800,23 @@
         10
       ],
       "parameters": {
-        "content": "## FINAL REVIEW ONLY — SENDING LOCKED\n\nThis workflow is intentionally INACTIVE. Gmail Send and all Sheets write/update nodes are DEACTIVATED. Batch06 Control!B2 is HOLD, not approved. DO NOT execute this workflow for prospect sending. Live sending requires full end-to-end QA of pacing, accurate Gmail/recipient pairing, and ledger-first writeback; then user approval. Accidental execution cannot send Gmail while the node is deactivated.\n\nOriginal 20 prospects remain PENDING. You can review Email Drafts rows 57–76 and Batch06 Send Log. Follow-ups need separate thread-aware workflow.\n\nGitHub Actions safe deployment verification requested Oct 23, 2026. Both batch controls must remain HOLD until end-to-end QA is independently verified.\n\nGitHub deployment verification after API secret setup; maintain approval HOLD and locked sending.\n\nRetest after replacing unsupported credential listing with verified ExampleABC QA workflow credential references.",
+        "content": "## FINAL REVIEW ONLY — SENDING LOCKED\n\nThis workflow is intentionally INACTIVE. Gmail Send and all Sheets write/update nodes are DEACTIVATED. Batch06 Control!B2 is HOLD, not approved. DO NOT execute this workflow for prospect sending. Live sending requires full end-to-end QA of pacing, accurate Gmail/recipient pairing, and ledger-first writeback; then user approval. Accidental execution cannot send Gmail while the node is deactivated.\n\nOriginal 20 prospects remain PENDING. You can review Email Drafts rows 57–76 and Batch06 Send Log. Follow-ups need separate thread-aware workflow.\n\nGitHub Actions safe deployment verification requested Oct 23, 2026. Both batch controls must remain HOLD until end-to-end QA is independently verified.\n\nGitHub deployment verification after API secret setup; maintain approval HOLD and locked sending.\n\nRetest after replacing unsupported credential listing with verified ExampleABC QA workflow credential references.\n\nCompletion is asserted by re-reading actual Batch06 Send Log rows after the loop. Source-to-row mappings reference the confirmed Gmail send item, not Sheets update response shapes.",
         "width": 1300,
         "height": 260
+      }
+    },
+    {
+      "id": "audit2",
+      "name": "Require 20 Gmail IDs From Final Ledger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3890,
+        90
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst rows=$input.all().map(x=>x.json).filter(r=>r[\"Batch ID\"]===\"BATCH06-20261022\");\nconst byid=new Map(rows.map(r=>[Number(r[\"Prospect #\"]),r]));\nif(rows.length!==20||byid.size!==20)throw Error(\"Batch06 ledger count mismatch, do not mark complete.\");\nfor(let id=56;id<=75;id++){\nconst r=byid.get(id);\nif(!r||r.Status!==\"SENT\"||!String(r[\"Gmail Message ID\"]||\"\").trim()||!String(r[\"Sent At ET\"]||\"\").trim())throw Error(\"Batch06 not fully logged: #\"+id);\n}\nreturn [{json:{\"Batch ID\":\"BATCH06-20261022\",Approval:\"COMPLETE\",\"Last Run\":new Date().toISOString()}}];"
       }
     }
   ],
@@ -949,7 +979,7 @@
       "main": [
         [
           {
-            "node": "Require ALL 20 sends logged",
+            "node": "Re-read Batch06 Ledger After Loop",
             "type": "main",
             "index": 0
           }
@@ -1040,7 +1070,18 @@
         ]
       ]
     },
-    "Require ALL 20 sends logged": {
+    "Re-read Batch06 Ledger After Loop": {
+      "main": [
+        [
+          {
+            "node": "Require 20 Gmail IDs From Final Ledger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require 20 Gmail IDs From Final Ledger": {
       "main": [
         [
           {
