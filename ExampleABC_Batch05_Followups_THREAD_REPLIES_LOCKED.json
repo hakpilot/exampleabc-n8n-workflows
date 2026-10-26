@@ -359,31 +359,29 @@
     },
     {
       "id": "reply",
-      "name": "Reply In Original Gmail Thread - DEACTIVATED",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
+      "name": "Send Explicit ExampleABC Same-Thread Reply - LOCKED",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         3600,
         420
       ],
+      "disabled": true,
       "parameters": {
-        "resource": "message",
-        "operation": "reply",
-        "messageId": "={{ $json.orig_message_id }}",
-        "emailType": "text",
-        "message": "={{ $json.body }}",
-        "options": {
-          "appendAttribution": false,
-          "replyToSenderOnly": false,
-          "senderName": "Hyder Khan"
-        }
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({raw:$json.raw,threadId:$json.original_thread_id}) }}",
+        "options": {}
       },
       "credentials": {
         "gmailOAuth2": {
           "name": "hyder@exampleabc.com"
         }
-      },
-      "disabled": true
+      }
     },
     {
       "id": "restore",
@@ -396,7 +394,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "\nconst m=$input.item.json,idx=$('Loop One Followup At A Time').context.currentRunIndex;\nconst src=$('Build Verified Thread Reply Queue').all()[idx]?.json;\nif(!m.id||!src||src.batch_id!=='BATCH05-FOLLOWUP-20261026')throw Error('Gmail did not confirm reply ID. STOP, check Sent; do not rerun blindly');\nreturn {json:{...src,reply_id:m.id,sent_at:new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour12:false})}};\n"
+        "jsCode": "\nconst m=$input.item.json,idx=$('Loop One Followup At A Time').context.currentRunIndex;\nconst src=$('Build Verified Thread Reply Queue').all()[idx]?.json;\nif(!m.id||!m.threadId||!src||m.threadId!==src.orig_thread_id||src.batch_id!=='BATCH05-FOLLOWUP-20261026')throw Error('Gmail did not confirm reply ID. STOP, check Sent; do not rerun blindly');\nreturn {json:{...src,reply_id:m.id,sent_at:new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour12:false})}};\n"
       }
     },
     {
@@ -649,7 +647,7 @@
         -120
       ],
       "parameters": {
-        "content": "## BATCH 05 FOLLOW-UPS — LOCKED\n\n15 first followups to Batch05 #41–55 sent October 20. Original Gmail sent-message and thread IDs tracked in Batch05 Followup Log. Do NOT execute or enable until the owner explicitly approves after Monday live thread QA.\n\nReply Gmail node plus all Sheets writes are deactivated. Approval control Batch05 Followup Control!B2 = HOLD. Sending is one-time via signed GitHub Actions release only. Follow-up must go into original threads, with reply/opt-out checks.\n\nInitial Monday Oct26 n8n API locked deployment requested. No sends or Sheets writes permitted.",
+        "content": "## BATCH 05 FOLLOW-UPS — LOCKED\n\n15 first followups to Batch05 #41–55 sent October 20. Original Gmail sent-message and thread IDs tracked in Batch05 Followup Log. Do NOT execute or enable until the owner explicitly approves after Monday live thread QA.\n\nReply Gmail node plus all Sheets writes are deactivated. Approval control Batch05 Followup Control!B2 = HOLD. Sending is one-time via signed GitHub Actions release only. Follow-up must go into original threads, with reply/opt-out checks.\n\nInitial Monday Oct26 n8n API locked deployment requested. No sends or Sheets writes permitted.\n\nOCT26 INCIDENT REMEDIATION: native Gmail Reply removed. Explicit MIME Gmail API reply with From: hyder@exampleabc.com and To: verified original prospect ONLY, plus original Message-ID and threadId. Self-owned QA12 confirmed matching thread and headers. HTTP POST is HARD DISABLED. Must pass production-preview QA and be explicitly reapproved before any future release.",
         "width": 1500,
         "height": 260
       }
@@ -666,6 +664,42 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "const expected=new Set([41,42,43,44,45,46,47,48,49,50,51,52,53,54,55]);\nconst matched=$input.all().map(item=>item.json).filter(r=>r['Batch ID']==='BATCH05-FOLLOWUP-20261026');\nconst unique=new Map();\nfor(const row of matched){\n const id=Number(row['Prospect #']);\n if(!expected.has(id))throw Error('Unexpected prospect in batch ledger: '+id);\n if(row[\"Send Status\"]!=='SENT'||!String(row[\"Follow-up Gmail ID\"]||'').trim()||!String(row[\"Follow-up Sent ET\"]||'').trim())throw Error('Incomplete send ledger row #'+id);\n const prior=unique.get(id);\n if(prior&&String(prior[\"Follow-up Gmail ID\"])!==String(row[\"Follow-up Gmail ID\"]))throw Error('Conflicting Gmail IDs for prospect #'+id);\n unique.set(id,row);\n}\nif(unique.size!==expected.size)throw Error('Missing confirmed unique ledger IDs; got '+unique.size+' of '+expected.size);\nreturn [{json:{'Batch ID':'BATCH05-FOLLOWUP-20261026',Approval:'COMPLETE','Last Run':new Date().toISOString()}}];"
+      }
+    },
+    {
+      "id": "originalGmailMetadata",
+      "name": "Read Original Gmail Message Metadata - Read Only",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3100,
+        420
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://gmail.googleapis.com/gmail/v1/users/me/messages/' + $json.orig_message_id + '?format=metadata' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "explicitReplyMime",
+      "name": "Build Explicit ExampleABC Thread Reply MIME",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3350,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst original=$input.item.json;\nconst c=$('Fail Closed on Replies or Additional Messages').item.json;\nconst from='hyder@exampleabc.com';\nconst to=String(c.to||'').trim().toLowerCase();\nif(c.verified!==true||!c.orig_message_id||!c.orig_thread_id||original.id!==c.orig_message_id||original.threadId!==c.orig_thread_id)throw Error('Original Gmail message/thread ID changed; do not reply');\nif(!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$/i.test(to)||['hyder@exampleabc.com','hyder@hiratechnologies.net','hakpilot@gmail.com'].includes(to))throw Error('Unsafe reply recipient');\nconst headers=Array.isArray(original.payload?.headers)?original.payload.headers:[];\nconst getHeader=(name)=>String(headers.find(h=>String(h.name||'').toLowerCase()===name.toLowerCase())?.value||'').trim();\nconst origFrom=getHeader('From'),origTo=getHeader('To'),origSubject=getHeader('Subject');\nconst messageId=getHeader('Message-ID'),refs=getHeader('References');\nconst originalToAddresses=(origTo.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi)||[]).map(v=>v.toLowerCase());\nif(!origFrom.toLowerCase().includes(from)||originalToAddresses.length!==1||originalToAddresses[0]!==to)throw Error('Original From/To does not match verified ExampleABC -> prospect conversation');\nif(!/^<[^<>\\r\\n\\s]+>$/.test(messageId)||/[\\r\\n]/.test(origSubject)||!origSubject||/[\\r\\n]/.test(refs))throw Error('Invalid RFC822 original headers');\nconst subject=/^re:/i.test(origSubject)?origSubject:'Re: '+origSubject;\nconst encodedSubject=/[^\\x00-\\x7F]/.test(subject)?'=?UTF-8?B?'+Buffer.from(subject,'utf8').toString('base64')+'?=':subject;\nconst body=String(c.body||'');\nif(!body.trim()||!body.toLowerCase().includes('unsubscribe'))throw Error('Missing first-followup template or opt-out');\nconst references=(refs?refs+' ':'')+messageId;\nconst mime=[\n 'From: Hyder Khan <'+from+'>',\n 'To: '+to,\n 'Subject: '+encodedSubject,\n 'In-Reply-To: '+messageId,\n 'References: '+references,\n 'MIME-Version: 1.0',\n 'Content-Type: text/plain; charset=UTF-8',\n 'Content-Transfer-Encoding: 8bit',\n '',\n body\n].join('\\r\\n');\nconst raw=Buffer.from(mime,'utf8').toString('base64').replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');\nreturn {json:{...c,raw,explicit_from:from,explicit_to:to,original_thread_id:c.orig_thread_id}};\n"
       }
     }
   ],
@@ -835,18 +869,7 @@
       "main": [
         [
           {
-            "node": "Reply In Original Gmail Thread - DEACTIVATED",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Reply In Original Gmail Thread - DEACTIVATED": {
-      "main": [
-        [
-          {
-            "node": "Require Gmail Follow-up Message ID",
+            "node": "Read Original Gmail Message Metadata - Read Only",
             "type": "main",
             "index": 0
           }
@@ -913,6 +936,39 @@
         [
           {
             "node": "Set Followup Control COMPLETE - DEACTIVATED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Original Gmail Message Metadata - Read Only": {
+      "main": [
+        [
+          {
+            "node": "Build Explicit ExampleABC Thread Reply MIME",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Explicit ExampleABC Thread Reply MIME": {
+      "main": [
+        [
+          {
+            "node": "Send Explicit ExampleABC Same-Thread Reply - LOCKED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Explicit ExampleABC Same-Thread Reply - LOCKED": {
+      "main": [
+        [
+          {
+            "node": "Require Gmail Follow-up Message ID",
             "type": "main",
             "index": 0
           }
