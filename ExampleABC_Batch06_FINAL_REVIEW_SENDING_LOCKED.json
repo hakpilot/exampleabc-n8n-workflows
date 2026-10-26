@@ -816,7 +816,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "\nconst rows=$input.all().map(x=>x.json).filter(r=>r[\"Batch ID\"]===\"BATCH06-20261022\");\nconst byid=new Map(rows.map(r=>[Number(r[\"Prospect #\"]),r]));\nif(rows.length!==20||byid.size!==20)throw Error(\"Batch06 ledger count mismatch, do not mark complete.\");\nfor(let id=56;id<=75;id++){\nconst r=byid.get(id);\nif(!r||r.Status!==\"SENT\"||!String(r[\"Gmail Message ID\"]||\"\").trim()||!String(r[\"Sent At ET\"]||\"\").trim())throw Error(\"Batch06 not fully logged: #\"+id);\n}\nreturn [{json:{\"Batch ID\":\"BATCH06-20261022\",Approval:\"COMPLETE\",\"Last Run\":new Date().toISOString()}}];"
+        "jsCode": "const expected=new Set([56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75]);\nconst matched=$input.all().map(item=>item.json).filter(r=>r['Batch ID']==='BATCH06-20261022');\nconst unique=new Map();\nfor(const row of matched){\n const id=Number(row['Prospect #']);\n if(!expected.has(id))throw Error('Unexpected prospect in batch ledger: '+id);\n if(row[\"Status\"]!=='SENT'||!String(row[\"Gmail Message ID\"]||'').trim()||!String(row[\"Sent At ET\"]||'').trim())throw Error('Incomplete send ledger row #'+id);\n const prior=unique.get(id);\n if(prior&&String(prior[\"Gmail Message ID\"])!==String(row[\"Gmail Message ID\"]))throw Error('Conflicting Gmail IDs for prospect #'+id);\n unique.set(id,row);\n}\nif(unique.size!==expected.size)throw Error('Missing confirmed unique ledger IDs; got '+unique.size+' of '+expected.size);\nreturn [{json:{'Batch ID':'BATCH06-20261022',Approval:'COMPLETE','Last Run':new Date().toISOString()}}];"
       }
     }
   ],
