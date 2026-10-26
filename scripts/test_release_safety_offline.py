@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0,"scripts")
 import launch_approved_batch06 as first
 import launch_approved_followups as follow
+import launch_approved_batch05_followups as batch05
 
 os.environ["N8N_API_KEY"]="OFFLINE_TEST_TOKEN_NO_API_CONNECTION"
 
@@ -20,10 +21,12 @@ def stub(method,path):
     raise RuntimeError("Unexpected external API request in offline test: "+path)
 first.api=stub
 follow.api=stub
+batch05.api=stub
 
 cases=[
 ("Batch06",first,{"contact_fingerprint":"0123abcd"},27,"Gmail Send Approved Initial Only",6),
-("Followups",follow,{"contact_fingerprint":"0123abcd"},25,"Reply In Original Gmail Thread - DEACTIVATED",5)
+("Followups",follow,{"contact_fingerprint":"0123abcd"},25,"Reply In Original Gmail Thread - DEACTIVATED",5),
+("Batch05",batch05,{"contact_fingerprint":"0123abcd"},25,"Reply In Original Gmail Thread - DEACTIVATED",5)
 ]
 for title,module,approval,expected_nodes,send_name,sensitive_count in cases:
     workflow,token=module.build(approval)
