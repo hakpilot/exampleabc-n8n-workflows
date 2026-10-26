@@ -1,3 +1,20 @@
+# IMPORTANT: October 26, 2026 Gmail Sender Incident — SAFETY HOLD
+
+**This section supersedes the prior release instructions below. DO NOT trigger any user-facing outreach release yet.**
+
+- On October 26, 31 follow-up emails were sent by a Gmail OAuth credential with the underlying HIRA account, yielding actual `From: hyder@hiratechnologies.net` and reply-all `To` that included the business alias or HIRA address alongside the prospect. All 31 send ledger Gmail IDs are retained and marked as incident in the tracker. **Do not resend them.**
+- The remaining 20 Batch06 initial emails (#56–75) are **unsent; approval remains HOLD**.
+- The Gmail OAuth credential's allowed HTTP request domains have been changed to **Specific Domains: gmail.googleapis.com** (not all domains), enabling restricted official Gmail API operations.
+- **QA11 PASSED:** self-only API test with exact RFC822 `From: hyder@exampleabc.com`, `To: hakpilot@gmail.com` and empty CC/BCC, confirmed from actual MIME. Sent message `1a17a3419cc3fa7b`.
+- **QA12 PASSED:** self-only reply with RFC822 `From: hyder@exampleabc.com`, `To: hakpilot@gmail.com`, preserved `threadId: 1a17a3419cc3fa7b`, and correct In-Reply-To / References headers. Sent message `1a17a367120dcc41`.
+- The three LOCKED production source workflows are now replaced with **explicit Gmail API raw-MIME sender nodes** in place of n8n native Gmail Send/Reply. The follow-up workflows also read the original RFC822 metadata to construct the Reply headers. **All HTTP POST sends and Sheets writes remain disabled**; their n8n deployments passed source validation.
+- The offline safety/JS syntax validation passed via GitHub Actions run **40409298161**.
+- All three future release scripts contain a hard-coded fail-closed `INCIDENT_20261026_SENDER_SAFETY_HOLD` at function entry; older approval artifacts or old documentation must not be used to launch. Before re-enabling outreach, run a controlled self-only integrated test of the new production path, then receive a **fresh user approval** and perform complete Monday-or-later Gmail and Sheet status reconciliation. No partial batch may be retried blindly.
+
+**Workflow links**: [Batch06 27-node locked](https://auto.exampleabc.com/workflow/oOTxtl5hkMW3I9ZNntQE4), [Batch34 26-node locked](https://auto.exampleabc.com/workflow/4zgYbHHOcmxaXuQ1), [Batch05 26-node locked](https://auto.exampleabc.com/workflow/emudjS3OMOY3yfep).
+
+---
+
 # ExampleABC Sales Outreach Automation — Final Review & Launch
 
 **Updated and verified Monday, October 26, 2026.** The Google Sheets/n8n/Gmail integration is deployed. Prospect sending is still **LOCKED** pending the owner's explicit review and approval.
