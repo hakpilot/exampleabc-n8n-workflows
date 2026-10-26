@@ -71,7 +71,25 @@ def validate_locked(workflow):
             if node.get("disabled") is not True:
                 raise RuntimeError("Unsafe Sheets write not disabled: " + node["name"])
         if typ == "n8n-nodes-base.httpRequest":
-            raise RuntimeError("HTTP request node prohibited in locked deployment.")
+            url = str(params.get("url", ""))
+            method = str(params.get("method", "GET")).upper()
+            if (params.get("authentication") != "predefinedCredentialType" or
+                    params.get("nodeCredentialType") != "gmailOAuth2" or
+                    "gmailOAuth2" not in node.get("credentials", {})):
+                raise RuntimeError("HTTP node lacks verified Gmail OAuth credential")
+            if method == "POST":
+                if url != "https://gmail.googleapis.com/gmail/v1/users/me/messages/send":
+                    raise RuntimeError("Unapproved Gmail API write endpoint")
+                sends += 1
+                if node.get("disabled") is not True:
+                    raise RuntimeError("Explicit Gmail API sender MUST remain disabled in locked source")
+            elif method == "GET":
+                # Only metadata on an original Gmail message, with a fixed official API prefix.
+                if not (url.startswith("={{ 'https://gmail.googleapis.com/gmail/v1/users/me/messages/'") and
+                        url.endswith(" + '?format=metadata' }}")):
+                    raise RuntimeError("Unapproved read-only Gmail API URL expression")
+            else:
+                raise RuntimeError("Unapproved Gmail API HTTP method")
     if sends == 0:
         raise RuntimeError("No sender found: wrong workflow file?")
     if not workflow.get("connections") or len(workflow["nodes"]) < 10:
