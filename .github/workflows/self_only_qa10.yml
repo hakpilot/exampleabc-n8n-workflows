@@ -1,0 +1,37 @@
+name: ExampleABC QA10 - Explicit Business Sender Self-Only
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/self_only_qa10.yml'
+      - 'ExampleABC_QA10_Explicit_Sender_SelfOnly.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-qa10-selfonly
+  cancel-in-progress: false
+
+jobs:
+  gmail-send-as-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout workflow repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Execute exactly one self-owned personal Gmail header test
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo 'Missing API secret; do not send'; exit 1; fi
+          python scripts/run_explicit_sender_qa10.py
+      - name: Keep production sending suspended
+        if: always()
+        run: echo 'This job can only contact hakpilot@gmail.com. Prospect release scripts remain blocked.'
