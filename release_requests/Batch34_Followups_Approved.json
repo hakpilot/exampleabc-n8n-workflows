@@ -1,0 +1,10 @@
+{
+  "batch": "BATCH34-FOLLOWUP-20261023",
+  "approved": true,
+  "expected_count": 16,
+  "approval_phrase": "I APPROVE BATCH 34: SEND 16 FIRST FOLLOWUPS",
+  "contact_fingerprint": "25942341",
+  "approved_for_local_date": "2026-10-26",
+  "approved_by": "User explicitly approved all three updated ExampleABC email queues in conversation",
+  "send_via": "n8n single-use approved release only"
+}
