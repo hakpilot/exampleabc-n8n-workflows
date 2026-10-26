@@ -292,7 +292,7 @@
         -50
       ],
       "parameters": {
-        "content": "## QA8 — Verify 15 Batch05 original Gmail threads only\n\nRead-only n8n workflow to verify original October 20 Gmail messages/threads for prospects #41–55, against live Prospects, Email Drafts, Contact Exceptions, and Batch05 Followup Log. Includes customer-address, SENT, and exactly-one-message thread checks. No Gmail Send/Reply nor Sheets updates. Token-guarded one-time execution, deactivated afterward.",
+        "content": "## QA8 — Verify 15 Batch05 original Gmail threads only\n\nRead-only n8n workflow to verify original October 20 Gmail messages/threads for prospects #41–55, against live Prospects, Email Drafts, Contact Exceptions, and Batch05 Followup Log. Includes customer-address, SENT, and exactly-one-message thread checks. No Gmail Send/Reply nor Sheets updates. Token-guarded one-time execution, deactivated afterward.\n\nRun Monday Oct26 full read-only verification of the 15 original Batch05 Gmail threads.",
         "width": 1550,
         "height": 250
       }
