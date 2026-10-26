@@ -1,0 +1,22 @@
+name: Diagnose ExampleABC Batch34 Execution Read-Only
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnose_batch34_1381.py'
+      - '.github/workflows/diagnose_batch34_1381.yml'
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect n8n execution failure without writing or sending
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python scripts/diagnose_batch34_1381.py
