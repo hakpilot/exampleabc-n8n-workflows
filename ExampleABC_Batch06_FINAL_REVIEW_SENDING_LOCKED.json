@@ -378,31 +378,29 @@
     },
     {
       "id": "send",
-      "name": "Gmail Send Approved Initial Only",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
+      "name": "Send Explicit ExampleABC Initial via Gmail API - LOCKED",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         3970,
         430
       ],
+      "disabled": true,
       "parameters": {
-        "resource": "message",
-        "operation": "send",
-        "sendTo": "={{ $json.to }}",
-        "subject": "={{ $json.subject }}",
-        "emailType": "text",
-        "message": "={{ $json.body }}",
-        "options": {
-          "appendAttribution": false,
-          "senderName": "Hyder Khan"
-        }
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({raw:$json.raw}) }}",
+        "options": {}
       },
       "credentials": {
         "gmailOAuth2": {
           "name": "hyder@exampleabc.com"
         }
-      },
-      "disabled": true
+      }
     },
     {
       "id": "confirm",
@@ -415,7 +413,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "\nconst m=$input.item.json;const idx=$('Loop One Email At A Time').context.currentRunIndex;let c;try{c=$('Loop One Email At A Time').item.json;}catch(e){c=$('Block if ANY prior Gmail match').all()[idx]?.json;}\nif(!m.id||!c||c.authorized_to_send!==true||c.approved_batch!=='BATCH06-20261022'||Number(c.prospect_id)<56||Number(c.prospect_id)>75)throw Error('Gmail message ID/recipient index unresolved; stop without logging send. Search Gmail before any retry.');\nconst sent_at=new Date().toLocaleString('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});\nreturn {json:{...c,gmail_message_id:m.id,gmail_thread_id:m.threadId||'',sent_at}};\n"
+        "jsCode": "\nconst m=$input.item.json;const idx=$('Loop One Email At A Time').context.currentRunIndex;let c;try{c=$('Loop One Email At A Time').item.json;}catch(e){c=$('Block if ANY prior Gmail match').all()[idx]?.json;}\nif(!m.id||!m.threadId||!c||c.authorized_to_send!==true||c.approved_batch!=='BATCH06-20261022'||Number(c.prospect_id)<56||Number(c.prospect_id)>75)throw Error('Gmail message ID/recipient index unresolved; stop without logging send. Search Gmail before any retry.');\nconst sent_at=new Date().toLocaleString('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});\nreturn {json:{...c,gmail_message_id:m.id,gmail_thread_id:m.threadId||'',sent_at}};\n"
       }
     },
     {
@@ -800,7 +798,7 @@
         10
       ],
       "parameters": {
-        "content": "## FINAL REVIEW ONLY — SENDING LOCKED\n\nThis workflow is intentionally INACTIVE. Gmail Send and all Sheets write/update nodes are DEACTIVATED. Batch06 Control!B2 is HOLD, not approved. DO NOT execute this workflow for prospect sending. Live sending requires full end-to-end QA of pacing, accurate Gmail/recipient pairing, and ledger-first writeback; then user approval. Accidental execution cannot send Gmail while the node is deactivated.\n\nOriginal 20 prospects remain PENDING. You can review Email Drafts rows 57–76 and Batch06 Send Log. Follow-ups need separate thread-aware workflow.\n\nGitHub Actions safe deployment verification requested Oct 23, 2026. Both batch controls must remain HOLD until end-to-end QA is independently verified.\n\nGitHub deployment verification after API secret setup; maintain approval HOLD and locked sending.\n\nRetest after replacing unsupported credential listing with verified ExampleABC QA workflow credential references.\n\nCompletion is asserted by re-reading actual Batch06 Send Log rows after the loop. Source-to-row mappings reference the confirmed Gmail send item, not Sheets update response shapes.",
+        "content": "## FINAL REVIEW ONLY — SENDING LOCKED\n\nThis workflow is intentionally INACTIVE. Gmail Send and all Sheets write/update nodes are DEACTIVATED. Batch06 Control!B2 is HOLD, not approved. DO NOT execute this workflow for prospect sending. Live sending requires full end-to-end QA of pacing, accurate Gmail/recipient pairing, and ledger-first writeback; then user approval. Accidental execution cannot send Gmail while the node is deactivated.\n\nOriginal 20 prospects remain PENDING. You can review Email Drafts rows 57–76 and Batch06 Send Log. Follow-ups need separate thread-aware workflow.\n\nGitHub Actions safe deployment verification requested Oct 23, 2026. Both batch controls must remain HOLD until end-to-end QA is independently verified.\n\nGitHub deployment verification after API secret setup; maintain approval HOLD and locked sending.\n\nRetest after replacing unsupported credential listing with verified ExampleABC QA workflow credential references.\n\nCompletion is asserted by re-reading actual Batch06 Send Log rows after the loop. Source-to-row mappings reference the confirmed Gmail send item, not Sheets update response shapes.\n\nOCT26 SENDER INCIDENT REMEDIATION: old native Gmail Send node replaced by explicit Gmail API raw MIME with From hyder@exampleabc.com and To ONLY vetted prospect. Confirmed using self-only QA11. Gmail API POST node is HARD DISABLED. Do not enable without separate verified end-to-end self-only ledger test and fresh user authorization after incident.",
         "width": 1300,
         "height": 260
       }
@@ -817,6 +815,20 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "const expected=new Set([56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75]);\nconst matched=$input.all().map(item=>item.json).filter(r=>r['Batch ID']==='BATCH06-20261022');\nconst unique=new Map();\nfor(const row of matched){\n const id=Number(row['Prospect #']);\n if(!expected.has(id))throw Error('Unexpected prospect in batch ledger: '+id);\n if(row[\"Status\"]!=='SENT'||!String(row[\"Gmail Message ID\"]||'').trim()||!String(row[\"Sent At ET\"]||'').trim())throw Error('Incomplete send ledger row #'+id);\n const prior=unique.get(id);\n if(prior&&String(prior[\"Gmail Message ID\"])!==String(row[\"Gmail Message ID\"]))throw Error('Conflicting Gmail IDs for prospect #'+id);\n unique.set(id,row);\n}\nif(unique.size!==expected.size)throw Error('Missing confirmed unique ledger IDs; got '+unique.size+' of '+expected.size);\nreturn [{json:{'Batch ID':'BATCH06-20261022',Approval:'COMPLETE','Last Run':new Date().toISOString()}}];"
+      }
+    },
+    {
+      "id": "explicitMimeInitial",
+      "name": "Build Strict ExampleABC Initial MIME",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3740,
+        430
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst c=$input.item.json;\nconst from='hyder@exampleabc.com';\nconst to=String(c.to||'').trim().toLowerCase();\nconst subject=String(c.subject||'').trim(),body=String(c.body||'');\nif(c.authorized_to_send!==true||c.approved_batch!=='BATCH06-20261022'||Number(c.prospect_id)<56||Number(c.prospect_id)>75)throw Error('Unapproved initial recipient');\nif(!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$/i.test(to)||to==='hyder@exampleabc.com'||to==='hyder@hiratechnologies.net'||to==='hakpilot@gmail.com')throw Error('Forbidden destination');\nif(!subject||/[\\r\\n]/.test(subject)||!body.toLowerCase().includes('unsubscribe'))throw Error('Invalid outgoing MIME content');\nconst encodedSubject=/[^\\x00-\\x7F]/.test(subject)?'=?UTF-8?B?'+Buffer.from(subject,'utf8').toString('base64')+'?=':subject;\nconst mime=[\n 'From: Hyder Khan <'+from+'>',\n 'To: '+to,\n 'Subject: '+encodedSubject,\n 'MIME-Version: 1.0',\n 'Content-Type: text/plain; charset=UTF-8',\n 'Content-Transfer-Encoding: 8bit',\n '',\n body\n].join('\\r\\n');\nconst raw=Buffer.from(mime,'utf8').toString('base64').replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');\nreturn {json:{...c,raw,explicit_from:from,explicit_to:to}};\n"
       }
     }
   ],
@@ -997,18 +1009,7 @@
       "main": [
         [
           {
-            "node": "Gmail Send Approved Initial Only",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gmail Send Approved Initial Only": {
-      "main": [
-        [
-          {
-            "node": "Require Gmail ID and restore candidate",
+            "node": "Build Strict ExampleABC Initial MIME",
             "type": "main",
             "index": 0
           }
@@ -1086,6 +1087,28 @@
         [
           {
             "node": "Mark Batch06 COMPLETE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Strict ExampleABC Initial MIME": {
+      "main": [
+        [
+          {
+            "node": "Send Explicit ExampleABC Initial via Gmail API - LOCKED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Explicit ExampleABC Initial via Gmail API - LOCKED": {
+      "main": [
+        [
+          {
+            "node": "Require Gmail ID and restore candidate",
             "type": "main",
             "index": 0
           }
