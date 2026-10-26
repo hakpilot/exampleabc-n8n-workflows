@@ -112,6 +112,8 @@ def get_execs(wfid):
     return api("GET","/executions?workflowId="+urllib.parse.quote(str(wfid))+"&limit=10").get("data",[])
 
 def main():
+    # INCIDENT_20261026_SENDER_SAFETY_HOLD: no external sending until From/To header QA passes.
+    raise RuntimeError('SAFETY HOLD: Gmail OAuth uses HIRA account and native reply-all includes an internal address. Do not release; repair explicit sender and recipient MIME first.')
     request=inspect_request()
     if any(x.get("name")==NAME for x in pages("/workflows")):
         raise RuntimeError("Release workflow already exists; refusing to create a duplicate or resend.")
