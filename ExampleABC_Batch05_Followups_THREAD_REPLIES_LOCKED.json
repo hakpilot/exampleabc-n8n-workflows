@@ -649,7 +649,7 @@
         -120
       ],
       "parameters": {
-        "content": "## BATCH 05 FOLLOW-UPS — LOCKED\n\n15 first followups to Batch05 #41–55 sent October 20. Original Gmail sent-message and thread IDs tracked in Batch05 Followup Log. Do NOT execute or enable until the owner explicitly approves after Monday live thread QA.\n\nReply Gmail node plus all Sheets writes are deactivated. Approval control Batch05 Followup Control!B2 = HOLD. Sending is one-time via signed GitHub Actions release only. Follow-up must go into original threads, with reply/opt-out checks.",
+        "content": "## BATCH 05 FOLLOW-UPS — LOCKED\n\n15 first followups to Batch05 #41–55 sent October 20. Original Gmail sent-message and thread IDs tracked in Batch05 Followup Log. Do NOT execute or enable until the owner explicitly approves after Monday live thread QA.\n\nReply Gmail node plus all Sheets writes are deactivated. Approval control Batch05 Followup Control!B2 = HOLD. Sending is one-time via signed GitHub Actions release only. Follow-up must go into original threads, with reply/opt-out checks.\n\nInitial Monday Oct26 n8n API locked deployment requested. No sends or Sheets writes permitted.",
         "width": 1500,
         "height": 260
       }
