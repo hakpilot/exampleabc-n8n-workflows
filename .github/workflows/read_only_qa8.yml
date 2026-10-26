@@ -30,7 +30,7 @@ jobs:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
         run: |
           if [ -z "$N8N_API_KEY" ]; then echo "N8N_API_KEY missing"; exit 1; fi
-          python scripts/run_followup_threads_qa8.py
+          python scripts/run_batch05_threads_qa8.py
       - name: Safety
         if: always()
         run: echo "Read-only verification; followup and new outreach controls remain HOLD."
