@@ -1,0 +1,10 @@
+{
+  "batch": "BATCH05-FOLLOWUP-20261026",
+  "approved": true,
+  "expected_count": 15,
+  "approval_phrase": "I APPROVE BATCH 05: SEND 15 FIRST FOLLOWUPS",
+  "contact_fingerprint": "b970ff19",
+  "approved_for_local_date": "2026-10-26",
+  "approved_by": "User approved revised initial and follow-up templates for sending today",
+  "send_via": "n8n approved single-use release"
+}
