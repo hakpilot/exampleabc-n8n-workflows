@@ -1,0 +1,927 @@
+{
+  "name": "ExampleABC - Batch05 Followups - THREAD REPLIES LOCKED",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Manual Review Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        120,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "control",
+      "name": "Read Followup Control",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        340,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch05 Followup Control",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "approval",
+      "name": "Require Followup Approval (HOLD now)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        570,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const c=$input.all()[0]?.json||{};if(c['Batch ID']!=='BATCH05-FOLLOWUP-20261026'||String(c.Approval||'')!=='APPROVE FOLLOWUPS'||Number(c['Expected Count'])!==15)throw Error('Followup review HOLD. Do not send.');return [{json:{'Batch ID':'BATCH05-FOLLOWUP-20261026',Approval:'RUNNING','Last Run':new Date().toISOString()}}];"
+      }
+    },
+    {
+      "id": "consume",
+      "name": "Lock Followup Batch as RUNNING - DISABLED",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        800,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch05 Followup Control",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Batch ID": "={{ $json['Batch ID'] }}",
+            "Approval": "RUNNING",
+            "Last Run": "={{ $json['Last Run'] }}"
+          },
+          "matchingColumns": [
+            "Batch ID"
+          ],
+          "schema": [
+            {
+              "id": "Batch ID",
+              "displayName": "Batch ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Approval",
+              "displayName": "Approval",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Run",
+              "displayName": "Last Run",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "id": "p",
+      "name": "Read Prospects",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1030,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Prospects",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "sp",
+      "name": "Store Prospects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "d",
+      "name": "Read Email Drafts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1490,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Email Drafts",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "sd",
+      "name": "Store Drafts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "ex",
+      "name": "Read Contact Exceptions",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1950,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Contact Exceptions",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "se",
+      "name": "Store Exceptions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "l",
+      "name": "Read Followup Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2410,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch05 Followup Log",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": false
+    },
+    {
+      "id": "prepare",
+      "name": "Build Verified Thread Reply Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst P=$('Store Prospects').first().json.rows,D=$('Store Drafts').first().json.rows,X=$('Store Exceptions').first().json.rows,L=$input.all().map(i=>i.json);\nconst n=r=>Number(r['#']??r['Prospect #']);const t=v=>String(v??'').trim();const em=v=>t(v).toLowerCase();\nconst pm=new Map(P.map(v=>[n(v),v])),dm=new Map(D.map(v=>[n(v),v])),ex=new Set(X.map(v=>Number(v.Prospect)));\nconst fail=[],queue=[];\nfor(const l of L){\n const id=n(l),p=pm.get(id),d=dm.get(id),issues=[],body=t(d?.['Follow-up Template']),to=em(l.Recipient);\n if(id<41||id>55)issues.push('Prospect not in approved Batch05 range 41-55');\n if(!p||!d)issues.push('Missing prospect/draft');\n if(!/^[0-9a-f]{16,}$/.test(t(l['Original Gmail Message ID']))||!t(l['Original Thread ID']))issues.push('Original Gmail message/thread ID absent');\n if(p?.Status!=='Sent'||t(p?.['Follow-up Date'])||t(p?.['Reply Date']))issues.push('Prospect not currently eligible');\n if(t(l['Send Status'])!=='PENDING'||t(l['Follow-up Gmail ID']))issues.push('Follow-up already processed');\n if(t(l['Review Status'])!=='READY')issues.push('Held by reviewer');\n if(to!==em(p?.['Public Email'])||to!==em(d?.['Send To']))issues.push('Email mismatch');\n if(!body||!body.toLowerCase().includes('unsubscribe'))issues.push('Template invalid');\n if(ex.has(id)||[24,25,29,31].includes(id))issues.push('Blocked contact');\n if(issues.length)fail.push('#'+id+': '+issues.join(','));\n else queue.push({id,to,body,orig_message_id:l['Original Gmail Message ID'],orig_thread_id:l['Original Thread ID'],batch_id:'BATCH05-FOLLOWUP-20261026'});\n}\nif(fail.length||queue.length!==15)throw Error('Follow-up send ABORT '+fail.join('|')+' candidates='+queue.length);\nreturn queue.map(x=>({json:x}));\n"
+      }
+    },
+    {
+      "id": "loop",
+      "name": "Loop One Followup At A Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2890,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "thread",
+      "name": "Inspect Original Gmail Thread",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3120,
+        420
+      ],
+      "parameters": {
+        "resource": "thread",
+        "operation": "get",
+        "threadId": "={{ $json.orig_thread_id }}",
+        "simple": false,
+        "options": {
+          "returnMessages": true
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "check",
+      "name": "Fail Closed on Replies or Additional Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst t=$input.item.json;\nconst c=$('Loop One Followup At A Time').item.json;\nconst msgs=Array.isArray(t.messages)?t.messages:[];\nif(t.id!==c.orig_thread_id||msgs.length!==1||msgs[0].id!==c.orig_message_id)throw Error('Thread changed since review; no follow-up to '+c.to);\nconst m=msgs[0];\nconst rawLabels=m.labelIds||m.labels||[];\nif(!Array.isArray(rawLabels)||!rawLabels.some(l=>l==='SENT'||l?.id==='SENT'||l?.name==='SENT'))throw Error('Original not confirmed as SENT: '+c.to);\nconst originalTo=String(m.To||m.payload?.headers?.find(h=>String(h.name).toLowerCase()==='to')?.value||'').toLowerCase();\nif(!originalTo.includes(String(c.to).toLowerCase()))throw Error('Original sent thread recipient does not match '+c.to);\nreturn {json:{...c,verified:true}};\n"
+      }
+    },
+    {
+      "id": "reply",
+      "name": "Reply In Original Gmail Thread - DEACTIVATED",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3600,
+        420
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "reply",
+        "messageId": "={{ $json.orig_message_id }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "replyToSenderOnly": false,
+          "senderName": "Hyder Khan"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "id": "restore",
+      "name": "Require Gmail Follow-up Message ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst m=$input.item.json,idx=$('Loop One Followup At A Time').context.currentRunIndex;\nconst src=$('Build Verified Thread Reply Queue').all()[idx]?.json;\nif(!m.id||!src||src.batch_id!=='BATCH05-FOLLOWUP-20261026')throw Error('Gmail did not confirm reply ID. STOP, check Sent; do not rerun blindly');\nreturn {json:{...src,reply_id:m.id,sent_at:new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour12:false})}};\n"
+      }
+    },
+    {
+      "id": "log",
+      "name": "Update Followup Send Log - DEACTIVATED",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        4080,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch05 Followup Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Prospect #": "={{ $json.id }}",
+            "Send Status": "SENT",
+            "Follow-up Gmail ID": "={{ $json.reply_id }}",
+            "Follow-up Sent ET": "={{ $json.sent_at }}"
+          },
+          "matchingColumns": [
+            "Prospect #"
+          ],
+          "schema": [
+            {
+              "id": "Prospect #",
+              "displayName": "Prospect #",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Send Status",
+              "displayName": "Send Status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow-up Gmail ID",
+              "displayName": "Follow-up Gmail ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow-up Sent ET",
+              "displayName": "Follow-up Sent ET",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "id": "prospectwrite",
+      "name": "Write Prospect Follow-up Timestamp - DEACTIVATED",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        4320,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Prospects",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "#": "={{ $('Require Gmail Follow-up Message ID').item.json.id }}",
+            "Follow-up Date": "={{ $('Require Gmail Follow-up Message ID').item.json.sent_at }}",
+            "Next Action": "Monitor reply, opt-out, bounce, meeting request"
+          },
+          "matchingColumns": [
+            "#"
+          ],
+          "schema": [
+            {
+              "id": "#",
+              "displayName": "#",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow-up Date",
+              "displayName": "Follow-up Date",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Next Action",
+              "displayName": "Next Action",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "id": "wait",
+      "name": "Wait 5 Seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4560,
+        420
+      ],
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "finish",
+      "name": "Re-read Followup Log After Loop",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3130,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch05 Followup Log",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "mark",
+      "name": "Set Followup Control COMPLETE - DEACTIVATED",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3380,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch05 Followup Control",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Batch ID": "={{ $json['Batch ID'] }}",
+            "Approval": "COMPLETE",
+            "Last Run": "={{ $json['Last Run'] }}"
+          },
+          "matchingColumns": [
+            "Batch ID"
+          ],
+          "schema": [
+            {
+              "id": "Batch ID",
+              "displayName": "Batch ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Approval",
+              "displayName": "Approval",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Run",
+              "displayName": "Last Run",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "id": "note",
+      "name": "REVIEW NOTE: Never auto-enable Gmail reply",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        350,
+        -120
+      ],
+      "parameters": {
+        "content": "## BATCH 05 FOLLOW-UPS — LOCKED\n\n15 first followups to Batch05 #41–55 sent October 20. Original Gmail sent-message and thread IDs tracked in Batch05 Followup Log. Do NOT execute or enable until the owner explicitly approves after Monday live thread QA.\n\nReply Gmail node plus all Sheets writes are deactivated. Approval control Batch05 Followup Control!B2 = HOLD. Sending is one-time via signed GitHub Actions release only. Follow-up must go into original threads, with reply/opt-out checks.",
+        "width": 1500,
+        "height": 260
+      }
+    },
+    {
+      "id": "audit2-followups",
+      "name": "Require 15 Confirmed Followup Gmail IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3430,
+        90
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst rows=$input.all().map(i=>i.json).filter(x=>x[\"Batch ID\"]===\"BATCH05-FOLLOWUP-20261026\");\nconst ids=new Set(rows.map(x=>Number(x[\"Prospect #\"])));\nif(rows.length!==15||ids.size!==15)throw Error(\"Followup ledger size changed; cannot mark complete.\");\nfor(let id=41;id<=55;id++){if(!ids.has(id))throw Error('Batch05 missing prospect #'+id);}\nfor(const r of rows){\nif(r[\"Send Status\"]!==\"SENT\"||!String(r[\"Follow-up Gmail ID\"]||\"\").trim()||!String(r[\"Follow-up Sent ET\"]||\"\").trim())throw Error(\"Unlogged follow-up #\"+r[\"Prospect #\"]);\n}\nreturn [{json:{\"Batch ID\":\"BATCH05-FOLLOWUP-20261026\",Approval:\"COMPLETE\",\"Last Run\":new Date().toISOString()}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Manual Review Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Followup Control",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Followup Control": {
+      "main": [
+        [
+          {
+            "node": "Require Followup Approval (HOLD now)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require Followup Approval (HOLD now)": {
+      "main": [
+        [
+          {
+            "node": "Lock Followup Batch as RUNNING - DISABLED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock Followup Batch as RUNNING - DISABLED": {
+      "main": [
+        [
+          {
+            "node": "Read Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Prospects": {
+      "main": [
+        [
+          {
+            "node": "Store Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Prospects": {
+      "main": [
+        [
+          {
+            "node": "Read Email Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Email Drafts": {
+      "main": [
+        [
+          {
+            "node": "Store Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Drafts": {
+      "main": [
+        [
+          {
+            "node": "Read Contact Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Contact Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Store Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Read Followup Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Followup Log": {
+      "main": [
+        [
+          {
+            "node": "Build Verified Thread Reply Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Verified Thread Reply Queue": {
+      "main": [
+        [
+          {
+            "node": "Loop One Followup At A Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop One Followup At A Time": {
+      "main": [
+        [
+          {
+            "node": "Re-read Followup Log After Loop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Inspect Original Gmail Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspect Original Gmail Thread": {
+      "main": [
+        [
+          {
+            "node": "Fail Closed on Replies or Additional Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fail Closed on Replies or Additional Messages": {
+      "main": [
+        [
+          {
+            "node": "Reply In Original Gmail Thread - DEACTIVATED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply In Original Gmail Thread - DEACTIVATED": {
+      "main": [
+        [
+          {
+            "node": "Require Gmail Follow-up Message ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require Gmail Follow-up Message ID": {
+      "main": [
+        [
+          {
+            "node": "Update Followup Send Log - DEACTIVATED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Followup Send Log - DEACTIVATED": {
+      "main": [
+        [
+          {
+            "node": "Write Prospect Follow-up Timestamp - DEACTIVATED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Prospect Follow-up Timestamp - DEACTIVATED": {
+      "main": [
+        [
+          {
+            "node": "Wait 5 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 5 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Loop One Followup At A Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re-read Followup Log After Loop": {
+      "main": [
+        [
+          {
+            "node": "Require 15 Confirmed Followup Gmail IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require 15 Confirmed Followup Gmail IDs": {
+      "main": [
+        [
+          {
+            "node": "Set Followup Control COMPLETE - DEACTIVATED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
