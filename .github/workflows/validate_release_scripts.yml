@@ -6,6 +6,8 @@ on:
     paths:
       - 'scripts/launch_approved_batch06.py'
       - 'scripts/launch_approved_followups.py'
+      - 'scripts/launch_approved_batch05_followups.py'
+      - 'scripts/test_release_safety_offline.py'
       - '.github/workflows/validate_release_scripts.yml'
   workflow_dispatch:
 
@@ -21,13 +23,13 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile release Python scripts (no execution)
-        run: python -m py_compile scripts/launch_approved_batch06.py scripts/launch_approved_followups.py
+        run: python -m py_compile scripts/launch_approved_batch06.py scripts/launch_approved_followups.py scripts/launch_approved_batch05_followups.py
       - name: Validate locked production sources
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          for name in ['ExampleABC_Batch06_FINAL_REVIEW_SENDING_LOCKED.json', 'ExampleABC_Batch34_Followups_THREAD_REPLIES_LOCKED.json']:
+          for name in ['ExampleABC_Batch06_FINAL_REVIEW_SENDING_LOCKED.json', 'ExampleABC_Batch34_Followups_THREAD_REPLIES_LOCKED.json', 'ExampleABC_Batch05_Followups_THREAD_REPLIES_LOCKED.json']:
               w=json.loads(Path(name).read_text())
               assert not w.get('active')
               send=[n for n in w['nodes'] if n['type']=='n8n-nodes-base.gmail' and n['parameters'].get('operation') in ('reply','send')]
@@ -41,4 +43,5 @@ jobs:
         run: |
           test ! -e release_requests/Batch06_Approved.json
           test ! -e release_requests/Batch34_Followups_Approved.json
+          test ! -e release_requests/Batch05_Followups_Approved.json
           echo 'No prospect sending authorized by these checks.'
