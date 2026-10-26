@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Single-use n8n release for 16 explicitly approved first follow-ups in original threads."""
+"""Single-use n8n release for 15 explicitly approved Batch05 first follow-ups in original threads."""
 import hashlib,json,os,sys,time,urllib.parse,urllib.request
 from pathlib import Path
 from deploy_locked_n8n import api,pages,validate_locked
@@ -13,7 +13,7 @@ def approval():
     r=json.loads(Path(REQUEST).read_text())
     if r.get("batch")!="BATCH05-FOLLOWUP-20261026" or r.get("approved") is not True:
         raise RuntimeError("Follow-up batch approval not present")
-    if r.get("expected_count")!=15 or r.get("approval_phrase")!="I APPROVE BATCH 34: SEND 16 FIRST FOLLOWUPS":
+    if r.get("expected_count")!=15 or r.get("approval_phrase")!="I APPROVE BATCH 05: SEND 15 FIRST FOLLOWUPS":
         raise RuntimeError("Exact 15-thread approval is missing.")
     f=r.get("contact_fingerprint","")
     if len(f)!=8 or any(x not in "0123456789abcdef" for x in f):
