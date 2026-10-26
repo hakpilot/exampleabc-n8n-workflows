@@ -1,0 +1,35 @@
+name: ExampleABC QA9 - Explicit From and To, Self Only
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/self_only_qa9.yml'
+      - 'ExampleABC_QA9_Explicit_Sender_SelfOnly.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exampleabc-self-only-qa9
+  cancel-in-progress: false
+
+jobs:
+  gmail-api-self-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Execute ONE authorized-identity self-only MIME test
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo 'Secret missing'; exit 1; fi
+          python scripts/run_explicit_sender_qa9.py
+      - name: Safety
+        if: always()
+        run: echo 'QA9 only addresses the owner personal Gmail account; no prospects.'
