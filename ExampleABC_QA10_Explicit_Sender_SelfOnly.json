@@ -1,0 +1,154 @@
+{
+  "name": "ExampleABC QA10 - Gmail Explicit Alias From and To SELF ONLY",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "qa9hook",
+      "name": "QA10 Signed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        140,
+        260
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "exampleabc-qa10-sendas-selfonly-7f47f1e7edbb4b2aa33b11764d21a953",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "bb4d8685-233c-4446-8566-10cd70ade339"
+    },
+    {
+      "id": "qa9gate",
+      "name": "Require Internal QA10 Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        390,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const h=$input.first().json.headers||{};if(h['x-exampleabc-qa9-token']!=='__QA10_TOKEN__')throw Error('Unauthorized internal self-test');return [{json:{authorized:true}}];"
+      }
+    },
+    {
+      "id": "qa9mime",
+      "name": "Build Exact Self-Only MIME",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst from='hyder@exampleabc.com';\nconst to='hakpilot@gmail.com';\nif(from!=='hyder@exampleabc.com'||to!=='hakpilot@gmail.com')throw Error('QA10 sender or self-only recipient mismatch');\nconst subject='ExampleABC QA10 - Explicit SendAs Header Test';\nconst content='Internal ExampleABC Gmail API send-as verification. Sent ONLY to a mailbox owned by the account operator. No customer was contacted.';\nconst mime=[\n 'From: Hyder Khan <'+from+'>',\n 'To: '+to,\n 'Subject: '+subject,\n 'MIME-Version: 1.0',\n 'Content-Type: text/plain; charset=UTF-8',\n 'Content-Transfer-Encoding: 8bit',\n '',\n content\n].join('\\r\\n');\nconst raw=Buffer.from(mime,'utf8').toString('base64').replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');\nreturn [{json:{to,from,subject,raw}}];"
+      }
+    },
+    {
+      "id": "qa9send",
+      "name": "Send Gmail API Self-Only Raw MIME",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        260
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({raw:$json.raw}) }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "qa9finish",
+      "name": "Require One Gmail Confirmation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1190,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const arr=$input.all().map(i=>i.json);if(arr.length!==1||!arr[0].id||!arr[0].threadId)throw Error('Self-only Gmail API send failed to provide ID');return [{json:{status:'QA10_ACCEPTED_PENDING_HEADER_INSPECTION',id:arr[0].id,threadId:arr[0].threadId}}];"
+      }
+    },
+    {
+      "id": "note",
+      "name": "QA10 Safety Requirements",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        300,
+        -15
+      ],
+      "parameters": {
+        "content": "## SELF-ONLY QA10\n\nTests sending from the existing Gmail credential's authorized **hyder@exampleabc.com** alias with explicit MIME **From** and exactly one **To: hakpilot@gmail.com**. NEVER send a prospect email with this workflow. It uses Google's Gmail API via n8n's Gmail OAuth credential and deactivates after one signed request. Post-test inspect actual RFC822 From/To; a success response alone does not prove the correct headers.",
+        "width": 1120,
+        "height": 230
+      }
+    }
+  ],
+  "connections": {
+    "QA10 Signed Webhook": {
+      "main": [
+        [
+          {
+            "node": "Require Internal QA10 Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require Internal QA10 Signature": {
+      "main": [
+        [
+          {
+            "node": "Build Exact Self-Only MIME",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Exact Self-Only MIME": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail API Self-Only Raw MIME",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Gmail API Self-Only Raw MIME": {
+      "main": [
+        [
+          {
+            "node": "Require One Gmail Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
