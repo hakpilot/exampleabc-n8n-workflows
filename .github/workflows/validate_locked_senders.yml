@@ -1,0 +1,29 @@
+name: Validate Corrected Locked ExampleABC Sender Workflows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/validate_locked_senders.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate three disabled senders, one-to-one header strategy, JavaScript syntax, and release blocks
+        run: python scripts/validate_locked_explicit_senders.py
+      - name: No network or outreach
+        if: always()
+        run: echo 'Offline source audit only; no API secrets, n8n calls, Google Sheets writes or emails.'
