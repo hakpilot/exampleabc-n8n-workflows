@@ -21,7 +21,7 @@ ExampleABC Automation Solutions, LLC
 hyder@exampleabc.com
 https://exampleabc.com | (609) 310-1805
 
-To opt out, just reply "unsubscribe.'''"
+To opt out, just reply "unsubscribe."'''
 JENN_BODY='''Hi Jenn,
 
 Just following up on my earlier note about routing estimate inquiries and coordinating customer follow-ups at McCabe Electric. If that's already streamlined, great. If there is still manual work involved, would a brief 15-minute conversation be worthwhile?
@@ -34,7 +34,7 @@ ExampleABC Automation Solutions, LLC
 hyder@exampleabc.com
 https://exampleabc.com | (609) 310-1805
 
-To opt out, just reply "unsubscribe.'''"
+To opt out, just reply "unsubscribe."'''
 
 def main():
     if any(x.get("name")==NAME for x in pages("/workflows")):
