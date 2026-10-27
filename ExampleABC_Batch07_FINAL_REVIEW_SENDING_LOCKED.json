@@ -798,7 +798,7 @@
         10
       ],
       "parameters": {
-        "content": "## BATCH 07 — LOCKED. Oct 27 proposed 08:00 Eastern.\n\nFresh prospects #76–95. Every outbound message must use the explicit Gmail API MIME From: hyder@exampleabc.com, To exactly one reviewed recipient, no Cc/Bcc. Sending and all Sheets writes disabled; no auto/manual trigger. A separate signed one-time release may be created after final checks, exact source approval and review. Do not activate this source.",
+        "content": "## BATCH 07 — LOCKED. Oct 27 proposed 08:00 Eastern.\n\nFresh prospects #76–95. Every outbound message must use the explicit Gmail API MIME From: hyder@exampleabc.com, To exactly one reviewed recipient, no Cc/Bcc. Sending and all Sheets writes disabled; no auto/manual trigger. A separate signed one-time release may be created after final checks, exact source approval and review. Do not activate this source.\n\nOct 26: GitHub-only locked deployment requested. No emails may be sent; no workflows activated.",
         "width": 1300,
         "height": 260
       }
