@@ -1,0 +1,30 @@
+name: ExampleABC Deploy Oct28 Two Followups
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy_oct28_two_followups.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: exampleabc-oct28-two-followups-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Deploy and activate two exact Oct28 same-thread followups
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "Missing N8N_API_KEY; no deployment"; exit 1; fi
+          python scripts/deploy_oct28_two_followups.py
+      - name: Reminder
+        if: always()
+        run: echo 'Deployment only. n8n is scheduled for Oct 28 at 08:10 America/New_York.'
