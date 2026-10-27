@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release-exactly-once:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -33,4 +33,5 @@ jobs:
         run: python scripts/launch_scheduled_initial_oct27.py
       - name: Prevent unverified replays
         if: failure()
-        run: echo 'STOP: Inspect n8n execution and Gmail Sent / Google Sheet ledger; never manually retry a partial run.'
+        run: |
+          echo 'STOP: Inspect n8n execution and Gmail Sent / Google Sheet ledger; never manually retry a partial run.'
