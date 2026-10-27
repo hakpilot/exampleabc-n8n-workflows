@@ -19,15 +19,18 @@ for b in plan.BATCHES:
               "id_first":b["id_first"],"id_last":b["id_last"],
               "recipients_hash":"0123abcd","content_hash":"9b93ca2f"}
     w,token=plan.build_release(b,approved)
-    assert w["active"] is False and len(w["nodes"])==28
+    assert w["active"] is False and len(w["nodes"])==30
     assert len(token)==64
     n={x["name"]:x for x in w["nodes"]}
     assert "0123abcd" in n["Prepare Queue and Gmail Search"]["parameters"]["jsCode"]
     assert "9b93ca2f" in n["Prepare Queue and Gmail Search"]["parameters"]["jsCode"]
     assert "hyder@exampleabc.com" in n["Build Strict ExampleABC Initial MIME"]["parameters"]["jsCode"]
+    assert "actual_headers_validated" in n["Require Gmail ID and restore candidate"]["parameters"]["jsCode"]
+    assert "f[0]!=='hyder@exampleabc.com'" in n["Require Actual From/To Headers Match"]["parameters"]["jsCode"]
     assert b["approval"] in n["Require exact batch approval"]["parameters"]["jsCode"]
-    sends=[x for x in w["nodes"] if x["type"]=="n8n-nodes-base.httpRequest"]
-    assert len(sends)==1 and sends[0]["parameters"]["method"]=="POST"
+    sends=[x for x in w["nodes"] if x["type"]=="n8n-nodes-base.httpRequest" and x["parameters"].get("method")=="POST"]
+    reads=[x for x in w["nodes"] if x["type"]=="n8n-nodes-base.httpRequest" and x["parameters"].get("method")=="GET"]
+    assert len(sends)==1 and len(reads)==1 and reads[0]["parameters"]["url"].startswith("={{ 'https://gmail.googleapis.com/gmail/v1/users/me/messages/'")
     assert sends[0]["parameters"]["url"]==plan.GMAIL_URL
     assert sends[0]["credentials"]["gmailOAuth2"]["name"]=="hyder@exampleabc.com"
     assert sends[0]["disabled"] is False
@@ -44,5 +47,5 @@ for b in plan.BATCHES:
             p=subprocess.run(["node","--check",name],capture_output=True,text=True)
             if p.returncode:raise RuntimeError("Code syntax in "+b["key"]+" / "+node["name"]+": "+p.stderr[:500])
         finally:Path(name).unlink()
-    print("PASS",b["key"],"28 nodes, one explicit sender, 5 writebacks, signed gate, exact-recipient hash, JS syntax")
+    print("PASS",b["key"],"30 nodes, one explicit sender, verified actual headers, 5 writebacks, signed gate, exact-recipient hash, JS syntax")
 print("PASS: No live n8n API calls, no prospect emails sent, no Sheets writes.")
