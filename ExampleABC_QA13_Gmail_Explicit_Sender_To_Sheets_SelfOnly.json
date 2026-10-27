@@ -1,0 +1,378 @@
+{
+  "name": "ExampleABC QA13 - One Self-Only Gmail API Send and Sheet Log",
+  "active": false,
+  "nodes": [
+    {
+      "id": "w",
+      "name": "QA13 Signed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        270
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "exampleabc-qa13-one-self-only-with-ledger-6530a9100dfb4292a4f94f025f038d24",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "754dcf3d-6d51-4971-bb50-01e2f44af27b"
+    },
+    {
+      "id": "gate",
+      "name": "Require QA13 Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        270
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const h=$input.first().json.headers||{};if(h['x-exampleabc-qa13-token']!=='__QA13_TOKEN__')throw Error('Unauthorized');return [{json:{authorized:true}}];"
+      }
+    },
+    {
+      "id": "read",
+      "name": "Read Automation QA Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        270
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "check",
+      "name": "Require READY_QA13 and Unique TestID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        790,
+        270
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows=$input.all().map(i=>i.json).filter(r=>r.TestID==='EXAMPLEABC-QA13-20261026');if(rows.length!==1||rows[0].Status!=='READY_QA13')throw Error('QA13 not armed, no Gmail sends');return [{json:{TestID:'EXAMPLEABC-QA13-20261026',Status:'QA13_RUNNING',Timestamp:new Date().toISOString(),'Message ID':''}}];"
+      }
+    },
+    {
+      "id": "update-RUNNING",
+      "name": "Write QA13 RUNNING to Automation QA",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        990,
+        270
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TestID": "={{ $json.TestID }}",
+            "Status": "QA13_RUNNING",
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Message ID": ""
+          },
+          "matchingColumns": [
+            "TestID"
+          ],
+          "schema": [
+            {
+              "id": "TestID",
+              "displayName": "TestID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "mime",
+      "name": "Build Self-Only ExampleABC MIME",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        270
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst from='hyder@exampleabc.com';\nconst to='hakpilot@gmail.com';\nif(from!=='hyder@exampleabc.com'||to!=='hakpilot@gmail.com')throw Error('QA13 forbidden identity');\nconst subject='ExampleABC QA13 Production Send and Sheets Log';\nconst content='One self-only controlled n8n Gmail API-to-Google-Sheets integration test. No prospect was contacted.';\nconst mime=['From: Hyder Khan <'+from+'>','To: '+to,'Subject: '+subject,'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: 8bit','',content].join('\\r\\n');\nconst raw=Buffer.from(mime,'utf8').toString('base64').replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');\nreturn [{json:{raw,from,to,TestID:'EXAMPLEABC-QA13-20261026'}}];\n"
+      }
+    },
+    {
+      "id": "qa13Send",
+      "name": "Gmail API Send - QA13 to Personal Mailbox",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1500,
+        270
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({raw:$json.raw}) }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "confirm",
+      "name": "Confirm API Gmail ID and QA Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1730,
+        270
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const m=$input.first().json;if(!m.id||!m.threadId)throw Error('No Gmail confirmation');const src=$('Build Self-Only ExampleABC MIME').first().json;if(src.from!=='hyder@exampleabc.com'||src.to!=='hakpilot@gmail.com'||src.TestID!=='EXAMPLEABC-QA13-20261026')throw Error('MIME destination unexpectedly changed');return [{json:{TestID:'EXAMPLEABC-QA13-20261026',Status:'QA13_SENT',Timestamp:new Date().toISOString(),'Message ID':m.id}}];"
+      }
+    },
+    {
+      "id": "write-confirmed",
+      "name": "Write QA13 SENT to Automation QA",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1960,
+        270
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Automation QA",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TestID": "={{ $json.TestID }}",
+            "Status": "={{ $json.Status }}",
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Message ID": "={{ $json['Message ID'] }}"
+          },
+          "matchingColumns": [
+            "TestID"
+          ],
+          "schema": [
+            {
+              "id": "TestID",
+              "displayName": "TestID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "note",
+      "name": "QA13 Strict Self-Only Integration Test",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        460,
+        -20
+      ],
+      "parameters": {
+        "content": "## QA13: Exactly ONE self-only Gmail API -> Automation QA Sheet test.\n\nSigned webhook, sheet gate READY_QA13 consumed BEFORE send, explicit MIME From hyder@exampleabc.com and To hakpilot@gmail.com ONLY. One Gmail message ID is written to Automation QA row with a unique TestID. No prospect Sheets or addresses available. Run once from GitHub Actions and automatically deactivate.",
+        "width": 1320,
+        "height": 220
+      }
+    }
+  ],
+  "connections": {
+    "QA13 Signed Webhook": {
+      "main": [
+        [
+          {
+            "node": "Require QA13 Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require QA13 Signature": {
+      "main": [
+        [
+          {
+            "node": "Read Automation QA Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Automation QA Row": {
+      "main": [
+        [
+          {
+            "node": "Require READY_QA13 and Unique TestID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require READY_QA13 and Unique TestID": {
+      "main": [
+        [
+          {
+            "node": "Write QA13 RUNNING to Automation QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write QA13 RUNNING to Automation QA": {
+      "main": [
+        [
+          {
+            "node": "Build Self-Only ExampleABC MIME",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Self-Only ExampleABC MIME": {
+      "main": [
+        [
+          {
+            "node": "Gmail API Send - QA13 to Personal Mailbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail API Send - QA13 to Personal Mailbox": {
+      "main": [
+        [
+          {
+            "node": "Confirm API Gmail ID and QA Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm API Gmail ID and QA Source": {
+      "main": [
+        [
+          {
+            "node": "Write QA13 SENT to Automation QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
