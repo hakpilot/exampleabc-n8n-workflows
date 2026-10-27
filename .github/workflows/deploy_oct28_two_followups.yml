@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/deploy_oct28_two_followups.yml'
+      - 'scripts/deploy_oct28_two_followups.py'
   workflow_dispatch:
 permissions:
   contents: read
