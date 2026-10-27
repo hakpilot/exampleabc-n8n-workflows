@@ -1,0 +1,36 @@
+name: ExampleABC Oct27 8AM ET - ONE-TIME n8n New Outreach
+on:
+  schedule:
+    # October 27 2026 07:55 EDT = 11:55 UTC.
+    # Runner waits until 08:00 EDT; a late runner is bounded by its local-time safety window.
+    - cron: '55 11 27 10 *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: exampleabc-oct27-2026-two-approved-new-batches-once
+  cancel-in-progress: false
+jobs:
+  release-exactly-once:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout audited locked workflows and frozen reviewed content hashes
+        uses: actions/checkout@v4
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check runner receives a protected n8n API key
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo 'Missing N8N_API_KEY - NO SEND'; exit 1; fi
+      - name: Launch one-time signed n8n Batch06 then Batch07 no earlier than Oct27 8AM ET
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python scripts/launch_scheduled_initial_oct27.py
+      - name: Prevent unverified replays
+        if: failure()
+        run: echo 'STOP: Inspect n8n execution and Gmail Sent / Google Sheet ledger; never manually retry a partial run.'
