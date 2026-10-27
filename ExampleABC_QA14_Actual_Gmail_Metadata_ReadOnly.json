@@ -1,0 +1,126 @@
+{
+  "name": "ExampleABC QA14 - Read Actual Gmail Headers SELF ONLY",
+  "active": false,
+  "nodes": [
+    {
+      "id": "w14",
+      "name": "QA14 Signed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "exampleabc-qa14-self-only-read-metadata-1576ad0e44524e0eb26f6ff5cd7f0493",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "a19f7467-317d-470d-8d5c-a0b8a7c51b63"
+    },
+    {
+      "id": "g14",
+      "name": "Require QA14 Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        230,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const h=$input.first().json.headers||{};if(h['x-exampleabc-qa14-token']!=='__QA14_TOKEN__')throw Error('Unauthorized read-only QA14');return [{json:{authorized:true}}];"
+      }
+    },
+    {
+      "id": "r14",
+      "name": "Read Known Self-Only Gmail Headers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        470,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/1a17b0d46939c5cd?format=metadata",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "c14",
+      "name": "Verify RFC822 From To Cc Bcc",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const m=$input.first().json;const h=Array.isArray(m.payload?.headers)?m.payload.headers:[];const get=k=>String(h.find(v=>String(v.name||'').toLowerCase()===k.toLowerCase())?.value||'').trim();const from=get('From'),to=get('To'),cc=get('Cc'),bcc=get('Bcc');if(m.id!=='1a17b0d46939c5cd'||!from.includes('hyder@exampleabc.com')||to.toLowerCase()!=='hakpilot@gmail.com'||cc||bcc)throw Error('QA14 unexpected actual Gmail RFC822 headers');return [{json:{status:'PASS',id:m.id,verified_business_sender:true,sole_personal_recipient:true,has_no_cc_bcc:true}}];"
+      }
+    },
+    {
+      "id": "n14",
+      "name": "READ ONLY - QA14",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        100,
+        -50
+      ],
+      "parameters": {
+        "content": "READ ONLY QA14. Tests Gmail metadata read through the actual n8n Gmail OAuth credential on a known self-only QA13 message. Sends no emails, updates no Sheets and has a signed one-time webhook.",
+        "height": 180,
+        "width": 1000
+      }
+    }
+  ],
+  "connections": {
+    "QA14 Signed Webhook": {
+      "main": [
+        [
+          {
+            "node": "Require QA14 Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require QA14 Signature": {
+      "main": [
+        [
+          {
+            "node": "Read Known Self-Only Gmail Headers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Known Self-Only Gmail Headers": {
+      "main": [
+        [
+          {
+            "node": "Verify RFC822 From To Cc Bcc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
