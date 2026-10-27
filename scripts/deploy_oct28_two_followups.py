@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy a fresh one-time Oct28 same-thread follow-up workflow for Kim and Jenn."""
+'''Deploy a fresh one-time Oct28 same-thread follow-up workflow for Kim and Jenn.'''
 import json,sys
 from pathlib import Path
 from deploy_locked_n8n import api,pages,validate_locked
@@ -11,7 +11,7 @@ CONTROL="Oct28 Followup Control"
 LOG="Oct28 Followup Log"
 SEND="Send Explicit ExampleABC Same-Thread Reply - LOCKED"
 
-KIM_BODY="""Hi Kim,
+KIM_BODY='''Hi Kim,
 
 Just checking whether you had a chance to see my note about streamlining repair-status updates and front-desk follow-ups. If you're not the right person, would you be willing to point me toward whoever handles business operations? No worries if this isn't relevant.
 
@@ -21,8 +21,8 @@ ExampleABC Automation Solutions, LLC
 hyder@exampleabc.com
 https://exampleabc.com | (609) 310-1805
 
-To opt out, just reply "unsubscribe.""""
-JENN_BODY="""Hi Jenn,
+To opt out, just reply "unsubscribe.'''"
+JENN_BODY='''Hi Jenn,
 
 Just following up on my earlier note about routing estimate inquiries and coordinating customer follow-ups at McCabe Electric. If that's already streamlined, great. If there is still manual work involved, would a brief 15-minute conversation be worthwhile?
 
@@ -34,7 +34,7 @@ ExampleABC Automation Solutions, LLC
 hyder@exampleabc.com
 https://exampleabc.com | (609) 310-1805
 
-To opt out, just reply "unsubscribe.""""
+To opt out, just reply "unsubscribe.'''"
 
 def main():
     if any(x.get("name")==NAME for x in pages("/workflows")):
@@ -57,7 +57,7 @@ def main():
         "return [{json:{'Batch ID':'"+BATCH+"',Approval:'RUNNING','Last Run':new Date().toISOString()}}];"
     )
 
-    queue_js = r"""
+    queue_js = r'''
 const L=$input.all().map(i=>i.json);
 const t=v=>String(v??'').trim();
 const wanted=new Map([
@@ -79,7 +79,7 @@ for(const [id,w] of wanted){
 }
 if(fail.length||queue.length!==2) throw Error('Follow-up send ABORT '+fail.join('|')+' candidates='+queue.length);
 return queue.map(x=>({json:x}));
-""" % (json.dumps(KIM_BODY),json.dumps(JENN_BODY),BATCH,BATCH)
+''' % (json.dumps(KIM_BODY),json.dumps(JENN_BODY),BATCH,BATCH)
     nodes["Build Verified Thread Reply Queue"]["parameters"]["jsCode"]=queue_js
 
     req=nodes["Require Gmail Follow-up Message ID"]["parameters"]["jsCode"]
