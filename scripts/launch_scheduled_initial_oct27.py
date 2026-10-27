@@ -76,7 +76,7 @@ def read_manifest():
 
 def build_release(b,approval):
     w=validate_locked(json.loads(Path(b["source"]).read_text(encoding="utf8")))
-    if w.get("name")!=b["source_name"] or w.get("active") is not False or len(w.get("nodes",[]))!=27:
+    if w.get("name")!=b["source_name"] or w.get("active") is not False or len(w.get("nodes",[]))!=29:
         raise RuntimeError("Wrong or changed locked 27-node initial-outreach source")
     node={n["name"]:n for n in w["nodes"]}
     expected={
@@ -89,7 +89,7 @@ def build_release(b,approval):
         "Prepare Queue and Gmail Search","Find ALL prior Gmail correspondence",
         "Block if ANY prior Gmail match","Loop One Email At A Time",
         "Verify Queued Recipient","Build Strict ExampleABC Initial MIME",
-        SEND_NODE,"Require Gmail ID and restore candidate",
+        SEND_NODE,"Read Actual Sent Gmail Headers - Read Only","Require Actual From/To Headers Match","Require Gmail ID and restore candidate",
         "Log Gmail ID first - SEND LEDGER","Update original Prospect sent status",
         "Update original Email Draft sent status","Throttle 5 seconds",
         "Re-read "+("Batch06" if b["key"]=="batch06" else "Batch07")+" Ledger After Loop",
@@ -105,12 +105,19 @@ def build_release(b,approval):
     for n in w["nodes"]:
         typ=n["type"];p=n.get("parameters",{});operation=p.get("operation")
         if typ=="n8n-nodes-base.httpRequest":
-            if (p.get("method")!="POST" or p.get("url")!=GMAIL_URL or
-                p.get("authentication")!="predefinedCredentialType" or
+            if (p.get("authentication")!="predefinedCredentialType" or
                 p.get("nodeCredentialType")!="gmailOAuth2" or
-                n["name"]!=SEND_NODE or n.get("disabled") is not True):
-                raise RuntimeError("Unapproved HTTP method, endpoint, auth or enabled sender")
-            sensitive.append(n)
+                "gmailOAuth2" not in n.get("credentials",{})):
+                raise RuntimeError("Wrong Google OAuth identity on HTTP request")
+            if p.get("method")=="GET":
+                if n["name"]!="Read Actual Sent Gmail Headers - Read Only" or p.get("url")!="={{ 'https://gmail.googleapis.com/gmail/v1/users/me/messages/' + $json.id + '?format=metadata' }}":
+                    raise RuntimeError("Unexpected outbound Gmail readback URL")
+            elif p.get("method")=="POST":
+                if (p.get("url")!=GMAIL_URL or n["name"]!=SEND_NODE or n.get("disabled") is not True):
+                    raise RuntimeError("Unapproved Gmail API send URL or enabled sender")
+                sensitive.append(n)
+            else:
+                raise RuntimeError("Unapproved outbound HTTP method")
         elif typ=="n8n-nodes-base.googleSheets" and operation in ("update","append","appendOrUpdate"):
             if operation!="update" or n.get("disabled") is not True:
                 raise RuntimeError("Unsafe spreadsheet write source")
@@ -130,6 +137,11 @@ def build_release(b,approval):
         "'From: Hyder Khan <'+from+'>'" not in code or
         "hyder@hiratechnologies.net" not in code):
         raise RuntimeError("Sender identity and recipient suppression code changed")
+    checker=node["Require Actual From/To Headers Match"]["parameters"]["jsCode"]
+    if ("f[0]!=='hyder@exampleabc.com'" not in checker or "t.length!==1" not in checker or "||cc||bcc" not in checker):
+        raise RuntimeError("Actual Gmail RFC822 header verification removed or weakened")
+    if "m.actual_headers_validated!==true" not in node["Require Gmail ID and restore candidate"]["parameters"]["jsCode"]:
+        raise RuntimeError("Logging does not require checked actual Gmail From/To headers")
     if b["batch"] not in node["Prepare Queue and Gmail Search"]["parameters"]["jsCode"]:
         raise RuntimeError("Queue Code batch ID mismatch")
     if b["approval"] not in node["Require exact batch approval"]["parameters"]["jsCode"]:
@@ -194,7 +206,7 @@ def launch_one(b,approval):
     made=api("POST","/workflows",payload)
     wid=str(made["id"])
     saved=api("GET","/workflows/"+wid)
-    if saved.get("active") or len(saved.get("nodes",[]))!=28:
+    if saved.get("active") or len(saved.get("nodes",[]))!=30:
         raise RuntimeError("Unsafe persisted one-time workflow")
     old_ids={str(r["id"]) for r in api("GET","/executions?workflowId="+wid+"&limit=10").get("data",[])}
     active=False
@@ -225,7 +237,7 @@ def launch_one(b,approval):
             err=data.get("error") or {}
             last=data.get("lastNodeExecuted")
             raise RuntimeError("Release "+b["key"]+" incomplete; execution "+str(result["id"])+" at "+str(last)+": "+str(err.get("message") or "")[:300]+"; manual reconciliation required")
-        checks=[SEND_NODE,"Log Gmail ID first - SEND LEDGER","Update original Prospect sent status","Update original Email Draft sent status"]
+        checks=[SEND_NODE,"Read Actual Sent Gmail Headers - Read Only","Require Actual From/To Headers Match","Log Gmail ID first - SEND LEDGER","Update original Prospect sent status","Update original Email Draft sent status"]
         counts={name:len(nodes.get(name,[])) for name in checks}
         if any(n!=20 for n in counts.values()) or len(nodes.get("Mark "+("Batch06" if b["key"]=="batch06" else "Batch07")+" COMPLETE",[]))!=1:
             raise RuntimeError("Release "+b["key"]+" claims success but not all send/update/complete counts matched. "+str(counts))
@@ -241,6 +253,12 @@ def launch_one(b,approval):
 def main():
     approval=read_manifest()
     schedule_gate()
+    # Pre-validate BOTH complete workflows and both credential references BEFORE any send.
+    for b in BATCHES:
+        if any(x.get("name")==b["name"] for x in pages("/workflows")):
+            raise RuntimeError("One-time "+b["key"]+" release workflow already exists. Do not resend.")
+        build_release(b,approval["batches"][b["key"]])
+    print("Both approved 20-recipient releases prevalidated at scheduled time.",flush=True)
     for b in BATCHES:
         launch_one(b,approval["batches"][b["key"]])
         print("Batch "+b["key"]+" reconciled inside n8n; advancing to next authorized queue.",flush=True)
