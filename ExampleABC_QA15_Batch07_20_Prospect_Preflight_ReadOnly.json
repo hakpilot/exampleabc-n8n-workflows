@@ -1,0 +1,397 @@
+{
+  "name": "ExampleABC QA15 - Batch07 20 Prospect Preflight READ ONLY",
+  "nodes": [
+    {
+      "id": "qa6web",
+      "name": "QA15 Signed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        320
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "exampleabc-qa15-batch07-safe-20-preflight-12ea320a2d6c41369a7be1634726c56a",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "c2c639a3-c3af-434b-8b38-a6c510ee5487"
+    },
+    {
+      "id": "qa6token",
+      "name": "QA15 Auth Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const h=$input.first().json.headers||{};if(h['x-exampleabc-qa-token']!=='__QA15_TOKEN__')throw Error('Unauthorized QA15');return [{json:{authorized:true}}];"
+      }
+    },
+    {
+      "id": "rp",
+      "name": "Read Prospects",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1100,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Prospects",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "Store Prospects",
+      "name": "Store Prospects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "rd",
+      "name": "Read Email Drafts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1580,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Email Drafts",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "Store Drafts",
+      "name": "Store Drafts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1820,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "re",
+      "name": "Read Contact Exceptions",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2060,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Contact Exceptions",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "Store Exceptions",
+      "name": "Store Exceptions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2300,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{rows:$input.all().map(i=>i.json)}}];"
+      }
+    },
+    {
+      "id": "rl",
+      "name": "Read Batch06 Send Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2540,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Batch07 Send Log",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uuen8qn2hD1NWh7m",
+          "name": "ExampleABC Google Sheets"
+        }
+      }
+    },
+    {
+      "id": "query",
+      "name": "Prepare Queue and Gmail Search",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2780,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst P=$('Store Prospects').first().json.rows,D=$('Store Drafts').first().json.rows,X=$('Store Exceptions').first().json.rows,L=$input.all().map(i=>i.json);\nconst n=r=>Number(r['#']??r['Prospect #']);const txt=v=>String(v??'').trim();const em=v=>txt(v).toLowerCase();const draft=new Map(D.map(d=>[n(d),d]));const log=new Map(L.map(l=>[n(l),l]));const xset=new Set(X.map(e=>Number(e.Prospect)));\nconst allAddresses=P.map(p=>em(p['Public Email']));const candidates=[];const problems=[];\nfor(let id=76;id<=95;id++){const p=P.find(r=>n(r)===id),d=draft.get(id),l=log.get(id);const issues=[];const to=em(d?.['Send To']);\nif(!p||!d||!l){issues.push('Missing prospect/draft/send-ledger record');problems.push('#'+id+': '+issues.join(','));continue;}\nif(txt(p.Status)!=='Not contacted'||txt(p['First Email Date']))issues.push('Prospect already contacted');\nif(!/^draft\\b/i.test(txt(d['Draft Status']))||txt(d['Sent Date']))issues.push('Draft status/timestamp not unsent');\nif(l['Batch ID']!=='BATCH07-20261027'||txt(l.Status)!=='PENDING'||txt(l['Gmail Message ID'])||txt(l['Sent At ET']))issues.push('Send-log already processed');\nif(txt(l.Disposition)!=='READY')issues.push('Disposition not READY');\nif(to!==em(p['Public Email'])||to!==em(l.Recipient)||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(to))issues.push('Invalid/mismatched email');\nif(allAddresses.filter(x=>x===to).length!==1)issues.push('Duplicate email');\nif(xset.has(id))issues.push('Contact exception');\nif(!txt(d.Subject)||!txt(d['Personalized Email Body'])||!txt(d['Personalized Email Body']).toLowerCase().includes('unsubscribe'))issues.push('Invalid/empty draft');\nif(/unsubscribe|opt.?out|do not contact|hard bounce|no such user|mailbox full|undeliver|blocked|connection refused|not interested/i.test([p.Outcome,p.Notes,p['Next Action']].map(txt).join(' ')))issues.push('Suppression text');\nif(issues.length)problems.push('#'+id+': '+issues.join(', '));\nelse candidates.push({batch_id:'BATCH07-20261027',prospect_id:id,business:txt(p.Business),to,subject:txt(d.Subject),body:txt(d['Personalized Email Body'])});}\nif(problems.length||candidates.length!==20)throw Error('ABORT entire batch before Gmail: '+problems.join(' | ')+'; safe_count='+candidates.length);\nconst gmail_query='in:anywhere {'+candidates.map(c=>'to:'+c.to+' from:'+c.to).join(' ')+'}';\nreturn [{json:{gmail_query,candidates,expected:20,batch_id:'BATCH07-20261027'}}];\n"
+      }
+    },
+    {
+      "id": "gmailsearch",
+      "name": "Find ALL prior Gmail correspondence",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3010,
+        320
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "q": "={{ $json.gmail_query }}"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "qa6finish",
+      "name": "Verify 20 Matches and No Previous Gmail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3210,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst queue=$('Prepare Queue and Gmail Search').first().json;\nconst messages=$input.all().map(i=>i.json).filter(m=>m.id||m.threadId);\nif(messages.length)throw Error('Existing Gmail communications found for pending prospects; hold batch. Count='+messages.length);\nif(!Array.isArray(queue.candidates)||queue.candidates.length!==20)throw Error('Expected 20 validated prospective recipients, got '+(queue.candidates?.length??0));\nreturn [{json:{status:'QA15_PASS',eligible:queue.candidates.length,batch_id:'BATCH07-20261027',gmail_previous_messages:0,approved:false,sent:false}}];"
+      }
+    },
+    {
+      "id": "qa6note",
+      "name": "QA15 SAFE — zero sends and zero writes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        650,
+        0
+      ],
+      "parameters": {
+        "content": "## QA15 Read-only Batch07 20-contact LIVE preflight — never sends prospect messages or writes Google Sheets. Validates #76–95 against Prospects, Email Drafts, Contact Exceptions, Batch07 Send Log, and Gmail history. Signed one-use webhook with post-execution deactivation.",
+        "width": 1250,
+        "height": 230
+      }
+    }
+  ],
+  "connections": {
+    "QA15 Signed Webhook": {
+      "main": [
+        [
+          {
+            "node": "QA15 Auth Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA15 Auth Guard": {
+      "main": [
+        [
+          {
+            "node": "Read Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Prospects": {
+      "main": [
+        [
+          {
+            "node": "Store Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Prospects": {
+      "main": [
+        [
+          {
+            "node": "Read Email Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Email Drafts": {
+      "main": [
+        [
+          {
+            "node": "Store Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Drafts": {
+      "main": [
+        [
+          {
+            "node": "Read Contact Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Contact Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Store Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Read Batch06 Send Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Batch06 Send Log": {
+      "main": [
+        [
+          {
+            "node": "Prepare Queue and Gmail Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Queue and Gmail Search": {
+      "main": [
+        [
+          {
+            "node": "Find ALL prior Gmail correspondence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find ALL prior Gmail correspondence": {
+      "main": [
+        [
+          {
+            "node": "Verify 20 Matches and No Previous Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
