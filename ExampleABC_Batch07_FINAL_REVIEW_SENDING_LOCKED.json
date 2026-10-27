@@ -413,7 +413,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "\nconst m=$input.item.json;const idx=$('Loop One Email At A Time').context.currentRunIndex;let c;try{c=$('Loop One Email At A Time').item.json;}catch(e){c=$('Block if ANY prior Gmail match').all()[idx]?.json;}\nif(!m.id||!m.threadId||!c||c.authorized_to_send!==true||c.approved_batch!=='BATCH07-20261027'||Number(c.prospect_id)<76||Number(c.prospect_id)>95)throw Error('Gmail message ID/recipient index unresolved; stop without logging send. Search Gmail before any retry.');\nconst sent_at=new Date().toLocaleString('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});\nreturn {json:{...c,gmail_message_id:m.id,gmail_thread_id:m.threadId||'',sent_at}};\n"
+        "jsCode": "\nconst m=$input.item.json;const idx=$('Loop One Email At A Time').context.currentRunIndex;let c;try{c=$('Loop One Email At A Time').item.json;}catch(e){c=$('Block if ANY prior Gmail match').all()[idx]?.json;}\nif(!m.id||!m.threadId||m.actual_headers_validated!==true||!c||c.authorized_to_send!==true||c.approved_batch!=='BATCH07-20261027'||Number(c.prospect_id)<76||Number(c.prospect_id)>95)throw Error('Gmail message ID/recipient index unresolved; stop without logging send. Search Gmail before any retry.');\nconst sent_at=new Date().toLocaleString('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});\nreturn {json:{...c,gmail_message_id:m.id,gmail_thread_id:m.threadId||'',sent_at}};\n"
       }
     },
     {
@@ -798,7 +798,7 @@
         10
       ],
       "parameters": {
-        "content": "## BATCH 07 — LOCKED. Oct 27 proposed 08:00 Eastern.\n\nFresh prospects #76–95. Every outbound message must use the explicit Gmail API MIME From: hyder@exampleabc.com, To exactly one reviewed recipient, no Cc/Bcc. Sending and all Sheets writes disabled; no auto/manual trigger. A separate signed one-time release may be created after final checks, exact source approval and review. Do not activate this source.\n\nOct 26: GitHub-only locked deployment requested. No emails may be sent; no workflows activated.",
+        "content": "## BATCH 07 — LOCKED. Oct 27 proposed 08:00 Eastern.\n\nFresh prospects #76–95. Every outbound message must use the explicit Gmail API MIME From: hyder@exampleabc.com, To exactly one reviewed recipient, no Cc/Bcc. Sending and all Sheets writes disabled; no auto/manual trigger. A separate signed one-time release may be created after final checks, exact source approval and review. Do not activate this source.\n\nOct 26: GitHub-only locked deployment requested. No emails may be sent; no workflows activated.\n\nEXTRA OCT27 PRODUCTION SAFETY: after each outgoing Gmail API send, read actual Gmail metadata and verify exact From: hyder@exampleabc.com, To: one approved prospect, and empty Cc/Bcc BEFORE logging or allowing the next email. Stops immediately on header mismatch.",
         "width": 1300,
         "height": 260
       }
@@ -829,6 +829,42 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "\nconst c=$input.item.json;\nconst from='hyder@exampleabc.com';\nconst to=String(c.to||'').trim().toLowerCase();\nconst subject=String(c.subject||'').trim(),body=String(c.body||'');\nif(c.authorized_to_send!==true||c.approved_batch!=='BATCH07-20261027'||Number(c.prospect_id)<76||Number(c.prospect_id)>95)throw Error('Unapproved initial recipient');\nif(!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$/i.test(to)||to==='hyder@exampleabc.com'||to==='hyder@hiratechnologies.net'||to==='hakpilot@gmail.com')throw Error('Forbidden destination');\nif(!subject||/[\\r\\n]/.test(subject)||!body.toLowerCase().includes('unsubscribe'))throw Error('Invalid outgoing MIME content');\nconst encodedSubject=/[^\\x00-\\x7F]/.test(subject)?'=?UTF-8?B?'+Buffer.from(subject,'utf8').toString('base64')+'?=':subject;\nconst mime=[\n 'From: Hyder Khan <'+from+'>',\n 'To: '+to,\n 'Subject: '+encodedSubject,\n 'MIME-Version: 1.0',\n 'Content-Type: text/plain; charset=UTF-8',\n 'Content-Transfer-Encoding: 8bit',\n '',\n body\n].join('\\r\\n');\nconst raw=Buffer.from(mime,'utf8').toString('base64').replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');\nreturn {json:{...c,raw,explicit_from:from,explicit_to:to}};\n"
+      }
+    },
+    {
+      "id": "postSendActualHeaders",
+      "name": "Read Actual Sent Gmail Headers - Read Only",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4190,
+        430
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://gmail.googleapis.com/gmail/v1/users/me/messages/' + $json.id + '?format=metadata' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "hyder@exampleabc.com"
+        }
+      }
+    },
+    {
+      "id": "strictSentFromToAudit",
+      "name": "Require Actual From/To Headers Match",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4410,
+        430
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst m=$input.item.json;\nconst expect=$('Build Strict ExampleABC Initial MIME').item.json;\nif(!m.id||!m.threadId||!expect||expect.explicit_from!=='hyder@exampleabc.com')throw Error('SENDER HOLD: missing sent Gmail message/approval');\nconst headers=Array.isArray(m.payload?.headers)?m.payload.headers:[];\nconst header=k=>String(headers.find(h=>String(h.name||'').toLowerCase()===k.toLowerCase())?.value||'').trim();\nconst from=header('From'),to=header('To'),cc=header('Cc'),bcc=header('Bcc');\nconst addresses=v=>(v.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi)||[]).map(x=>x.toLowerCase());\nconst f=addresses(from),t=addresses(to);\nif(f.length!==1||f[0]!=='hyder@exampleabc.com'||t.length!==1||t[0]!==String(expect.explicit_to).toLowerCase()||cc||bcc){\nthrow Error('SENDER HOLD: actual Gmail From, To, Cc, or Bcc differs from approved message. Do not send next prospect.');\n}\nreturn {json:{id:m.id,threadId:m.threadId,actual_headers_validated:true}};\n"
       }
     }
   ],
@@ -1105,6 +1141,28 @@
       ]
     },
     "Send Explicit ExampleABC Initial via Gmail API - LOCKED": {
+      "main": [
+        [
+          {
+            "node": "Read Actual Sent Gmail Headers - Read Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Actual Sent Gmail Headers - Read Only": {
+      "main": [
+        [
+          {
+            "node": "Require Actual From/To Headers Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require Actual From/To Headers Match": {
       "main": [
         [
           {
