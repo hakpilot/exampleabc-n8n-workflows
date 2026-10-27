@@ -1,0 +1,98 @@
+{
+  "name": "ExampleABC Daily Outreach Research and Followup - STAGING v2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 8 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "4ef780cb-3854-469d-8ce8-948e06089735",
+      "name": "Weekdays 8 AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "pipeline_mode",
+              "name": "pipeline_mode",
+              "type": "string",
+              "value": "DRY_RUN"
+            },
+            {
+              "id": "sending_enabled",
+              "name": "sending_enabled",
+              "type": "boolean",
+              "value": false
+            },
+            {
+              "id": "daily_initial_target",
+              "name": "daily_initial_target",
+              "type": "number",
+              "value": 30
+            },
+            {
+              "id": "ab_arms",
+              "name": "ab_arms",
+              "type": "string",
+              "value": "A2-B3-C4"
+            },
+            {
+              "id": "suppression_policy",
+              "name": "suppression_policy",
+              "type": "string",
+              "value": "FAIL_CLOSED"
+            },
+            {
+              "id": "tracker_id",
+              "name": "tracker_id",
+              "type": "string",
+              "value": "1DyUlbmRlapp3fZTVSX8pLat0oPNPDKowA7qgCzsyqzY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d926e400-a810-4f2b-96e9-a6fd71b728a7",
+      "name": "Safe Daily Context - NO SEND",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Weekdays 8 AM ET": {
+      "main": [
+        [
+          {
+            "node": "Safe Daily Context - NO SEND",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/New_York",
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}
