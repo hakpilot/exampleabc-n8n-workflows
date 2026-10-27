@@ -261,7 +261,7 @@
         0
       ],
       "parameters": {
-        "content": "## QA15 Read-only Batch07 20-contact LIVE preflight — never sends prospect messages or writes Google Sheets. Validates #76–95 against Prospects, Email Drafts, Contact Exceptions, Batch07 Send Log, and Gmail history. Signed one-use webhook with post-execution deactivation.",
+        "content": "## QA15 Read-only Batch07 20-contact LIVE preflight — never sends prospect messages or writes Google Sheets. Validates #76–95 against Prospects, Email Drafts, Contact Exceptions, Batch07 Send Log, and Gmail history. Signed one-use webhook with post-execution deactivation.\nOct 27 00:xx ET — rerun verified read-only 20-contact preflight before scheduled mail; no prospect send or Sheets updates.",
         "width": 1250,
         "height": 230
       }
