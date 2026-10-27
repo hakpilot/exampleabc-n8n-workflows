@@ -17,6 +17,7 @@ ALLOWED = {
     "ExampleABC_Batch06_FINAL_REVIEW_SENDING_LOCKED.json",
     "ExampleABC_Batch34_Followups_THREAD_REPLIES_LOCKED.json",
     "ExampleABC_Batch05_Followups_THREAD_REPLIES_LOCKED.json",
+    "ExampleABC_Batch07_FINAL_REVIEW_SENDING_LOCKED.json",
 }
 SENSITIVE_GMAIL = {"send", "reply", "sendAndWait"}
 SENSITIVE_SHEETS = {"append", "appendOrUpdate", "update", "delete", "clear", "create", "upsert"}
