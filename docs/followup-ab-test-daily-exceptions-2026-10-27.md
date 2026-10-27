@@ -4,11 +4,11 @@ Date: 2026-10-27
 
 ## Cohort and assignment
 - Initial eligible pool: Batch06 prospects 56-75, Batch07 prospects 76-95.
-- Within each batch, allocate 10 to Arm A and 10 to Arm B using a fixed, auditable seeded shuffle; never rerandomize a contact.
-- Arm A: first follow-up (FU1) and second follow-up (FU2).
-- Arm B: FU1, FU2, and third follow-up (FU3).
+- Within each batch, allocate across A/B/C (13/13/14 across forty prospects) using a fixed, auditable seeded shuffle; never rerandomize a contact.
+- Arm A: two follow-ups (FU1, FU2).
+- Arm B: three follow-ups (FU1, FU2, FU3).\n- Arm C: four follow-ups (FU1, FU2, FU3, FU4).
 - Do not enroll known hard bounces, opt-outs, negative replies or active discussions. Preserve exclusion reason and randomized denominator for intent-to-treat analysis.
-- Target review dates: FU1 2026-11-02, FU2 2026-11-09, FU3 2026-11-17 (ET; Arm B only). These are review dates, NOT automatic send dates.
+- Target review dates: FU1 2026-11-02, FU2 2026-11-09, FU3 2026-11-17 (ET; Arms B and C), FU4 2026-11-24 (Arm C only). These are review dates, NOT automatic send dates.
 - Earlier Batches 01–05 remain in their existing completed sequences; do not send additional touches until reviewed under a separate migration plan.
 
 ## Required per-prospect fields
@@ -54,8 +54,8 @@ latest_provider_message_id, positive_reply, booked_call, proposal, deposit.
 ## Experimental readout
 Primary: qualified positive replies and booked discovery calls per randomized
 prospect; secondary: meetings held, proposal, paid deposit, opt-outs and hard
-bounces. Include denominators and exclusions; compare incremental value of FU3.
-With only 20 per arm, results are directional, not statistically definitive.
+bounces. Include denominators and exclusions; compare incremental value of FU3 and FU4.
+With only 13–14 per arm, results are directional, not statistically definitive.
 
 ## Deployment checklist
 [ ] Assign the two arms in the live tracker and persist.
