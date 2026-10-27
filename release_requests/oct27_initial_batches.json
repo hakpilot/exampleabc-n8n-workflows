@@ -1,0 +1,30 @@
+{
+  "authorized_for_date": "2026-10-27",
+  "authorized_local_time": "08:00",
+  "timezone": "America/New_York",
+  "approved_by_user": true,
+  "approval_context": "User requested automated sending at 08:00 ET October 27 for all pending new outreach including Batch 07, then said Please proceed with readiness steps.",
+  "business_sender": "hyder@exampleabc.com",
+  "sole_to_per_message": true,
+  "allow_cc_bcc": false,
+  "prior_followups_excluded": "31 follow-ups already sent Oct 26; do not resend",
+  "batches": {
+    "batch06": {
+      "batch_id": "BATCH06-20261022",
+      "expected_count": 20,
+      "id_first": 56,
+      "id_last": 75,
+      "recipients_hash": "fb771a68",
+      "content_hash": "3446f091"
+    },
+    "batch07": {
+      "batch_id": "BATCH07-20261027",
+      "expected_count": 20,
+      "id_first": 76,
+      "id_last": 95,
+      "recipients_hash": "9e5fea49",
+      "content_hash": "97817a95"
+    }
+  },
+  "safety": "Fail closed on changed subjects, bodies, addresses, exceptions, previous Gmail correspondence, actual From/To/CC/BCC headers or missing Gmail IDs; no automatic retry"
+}
