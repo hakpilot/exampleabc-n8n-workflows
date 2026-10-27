@@ -1,0 +1,36 @@
+name: ExampleABC Deploy Manual One-Time Release (No Sends)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy_manual_one_time_batches.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: exampleabc-manual-one-time-deployment
+  cancel-in-progress: false
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate both manual-only releases offline without any emails
+        run: python scripts/deploy_manual_one_time_batches.py
+      - name: Deploy two user-triggered n8n workflows but do not execute
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "Missing N8N_API_KEY; no deployment"; exit 1; fi
+          python scripts/deploy_manual_one_time_batches.py --deploy
+      - name: This job sends no emails
+        if: always()
+        run: |
+          echo 'Manually Execute Workflow ONCE in n8n; never re-run a partial batch. Send only after all preflight checks.'
