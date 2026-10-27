@@ -1,0 +1,22 @@
+name: ExampleABC QA14 - Actual Sent Gmail Metadata Read-Only
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/qa14_read_actual_headers.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check-actual-headers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify Gmail's actual RFC822 headers without any new sends
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python scripts/run_read_actual_gmail_headers_qa14.py
