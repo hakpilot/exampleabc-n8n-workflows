@@ -1,0 +1,85 @@
+{
+  "name": "ExampleABC 1PM Afternoon Outreach - STAGING",
+  "nodes": [
+    {
+      "id": "d65d270e-1111-4000-b007-000000000001",
+      "name": "Weekdays 1PM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 13 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d65d270e-1111-4000-b007-000000000002",
+      "name": "Safety Hold - NO SEND",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "mode",
+              "name": "mode",
+              "type": "string",
+              "value": "STAGING_NO_SEND"
+            },
+            {
+              "id": "target",
+              "name": "target_new_prospects",
+              "type": "number",
+              "value": 25
+            },
+            {
+              "id": "allowed",
+              "name": "sending_enabled",
+              "type": "boolean",
+              "value": false
+            },
+            {
+              "id": "time",
+              "name": "timezone",
+              "type": "string",
+              "value": "America/New_York"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Weekdays 1PM ET": {
+      "main": [
+        [
+          {
+            "node": "Safety Hold - NO SEND",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/New_York",
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}
