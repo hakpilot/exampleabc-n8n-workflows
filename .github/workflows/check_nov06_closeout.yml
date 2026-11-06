@@ -1,0 +1,24 @@
+name: ExampleABC Check Nov06 Closeout
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check_nov06_closeout.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read-only execution diagnosis
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          if [ -z "$N8N_API_KEY" ]; then echo "Missing N8N_API_KEY"; exit 1; fi
+          python scripts/check_nov06_closeout.py
